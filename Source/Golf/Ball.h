@@ -30,9 +30,6 @@ public:
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* Dodecahedron;
 
-	//UPROPERTY(VisibleAnywhere)
-	//UStaticMeshComponent* Arrow;
-
 	UPROPERTY(VisibleAnywhere)
 	class UCameraComponent* Camera;
 
@@ -40,10 +37,10 @@ public:
 	class USpringArmComponent* SpringArm;
 
 	// Callable functions
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION()
 	void ZoomIn();
 
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION()
 	void ZoomOut();
 
 	UFUNCTION()
@@ -58,9 +55,6 @@ public:
 	UFUNCTION()
 	void LookLeft(float value);
 
-	//UFUNCTION()
-	//void ArrowLockUnlock();
-
 	// Designer Functionality
 	UPROPERTY(EditAnywhere, Category = "Designer", meta = (ClampMin = "100.0", ClampMax = "10000.0", UIMin = "100.0", UIMax = "10000.0"))
 	float MaxZoomOutLength;
@@ -71,16 +65,17 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Designer", meta = (ClampMin = "1.0", ClampMax = "100.0", UIMin = "1.0", UIMax = "100.0"))
 	float ZoomInSpeed;
 
-	UPROPERTY(EditAnywhere, Category = "Designer", meta = (ClampMin = "0.1", ClampMax = "5.0", UIMin = "0.1", UIMax = "5.0"))
-	float ChargeUpSpeed;
+	UPROPERTY(EditAnywhere, Category = "Designer", meta = (ClampMin = "0.01", ClampMax = "10.0", UIMin = "0.01", UIMax = "10.0"))
+	float TimeNeededToReachFullChargeUp;
 
-	UPROPERTY(EditAnywhere, Category = "Designer", meta = (ClampMin = "0.01", ClampMax = "1.0", UIMin = "0.01", UIMax = "1.0"))
-	float ChargeUpPower;
+	UPROPERTY(EditAnywhere, Category = "Designer", meta = (ClampMin = "0.01", ClampMax = "30.0", UIMin = "0.01", UIMax = "30.0"))
+	float FullChargeUpPower;
 
 private:
 
 	float ZoomLength;
 	float Power;
+	float ChargeUpTimePassed;
 	//bool ArrowLock;
 
 	bool isCharging;

@@ -7,6 +7,8 @@
 #include "Camera/CameraComponent.h" 
 #include "GameFramework/SpringArmComponent.h" 
 
+#include <Runtime/Engine/Classes/Engine/Engine.h>
+
 // Sets default values
 ABall::ABall()
 {
@@ -23,21 +25,6 @@ ABall::ABall()
 		Dodecahedron->SetSimulatePhysics(true);
 		RootComponent = Dodecahedron;
 	}
-
-	// Setup static mesh for the arrow
-	//Arrow = CreateDefaultSubobject<UStaticMeshComponent>("Arrow");
-	//static ConstructorHelpers::FObjectFinder<UStaticMesh> ArrowMesh(TEXT("StaticMesh'/Game/Models/Arrow.Arrow'"));
-	//if (ArrowMesh.Succeeded())
-	//{
-	//	UStaticMesh* Asset2 = ArrowMesh.Object;
-	//	Arrow->SetStaticMesh(Asset2);
-	//	Arrow->SetSimulatePhysics(false);
-	//	Arrow->SetCollisionProfileName(FName("NoCollision"));
-	//	Arrow->AddRelativeLocation(FVector(70.0f, 0.0f, 0.0f));
-	//	Arrow->SetupAttachment(Dodecahedron);
-	//	Arrow->bAbsoluteRotation = true;
-	//	Arrow->CastShadow = false;
-	//}
 
 	// Setup Spring Arm
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>("springarm");
@@ -56,9 +43,9 @@ ABall::ABall()
 	// Set up initial values that can't be modified by the Designer.
 	ZoomLength = 0.0f;
 	Power = 0.0f;
-	ChargeUpSpeed = 1.0f;
-	ChargeUpPower = 1.0f;
-	//ArrowLock = false;
+	FullChargeUpPower = 1.0f;
+	TimeNeededToReachFullChargeUp = 1.0f;
+	ChargeUpTimePassed = 0.0f;
 	isCharging = false;
 	isDisableFireRelease = false;
 
@@ -85,25 +72,15 @@ void ABall::Tick(float DeltaTime)
 	if (isCharging && !isDisableFireRelease)
 	{
 		// Charge up the Power.
-		Power += (ChargeUpSpeed * DeltaTime);
-		if (Power > 100.0f)
-			Power = 100.0f;
+		ChargeUpTimePassed += DeltaTime;
 
-		
+		Power = (FullChargeUpPower / TimeNeededToReachFullChargeUp) * ChargeUpTimePassed;
 
-		// Rotate the arrow based on the direction that the Dodecahedron is facing when powering up.
-		//Arrow->SetVisibility(true, false);
-
-		/*FVector offset = Dodecahedron->GetComponentLocation() - Camera->GetComponentLocation();
-		offset = offset.GetSafeNormal(1.0f) * 200.0f;
-		Arrow->SetWorldLocation(GetActorLocation() + offset);
-
-		FRotator rotation = Camera->GetComponentRotation();
-		rotation.Pitch = 0.0f;
-		Arrow->SetRelativeRotation(rotation);*/
+		if (Power > FullChargeUpPower)
+			Power = FullChargeUpPower;
 	}
-	//else
-	//	Arrow->SetVisibility(false, false);
+
+	GEngine->AddOnScreenDebugMessage(1, 5.f, FColor::Red, FString::Printf(TEXT("Charge Power is %f"), Power));
 
 }
 
@@ -147,16 +124,18 @@ void ABall::Fire()
 		if (isCharging)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("Start Charge Up"));
+			ChargeUpTimePassed = 0.0f;
 		}
 		else
 		{
 			UE_LOG(LogTemp, Warning, TEXT("End Charge Up and Fire"));
 
 			FVector offset = Dodecahedron->GetComponentLocation() - Camera->GetComponentLocation();
-			offset = offset.GetSafeNormal(1.0f) * Power * (100000000.0f * ChargeUpPower);
-			Dodecahedron->ComponentVelocity = FVector(0.0f, 0.0f, 0.0f);
+			offset = offset.GetSafeNormal(1.0f) * Power * 10000000.0f;
+			Dodecahedron->SetPhysicsLinearVelocity(FVector(0.0f, 0.0f, 0.0f));
 			Dodecahedron->AddForce(offset);
 			Power = 0.0f;
+			ChargeUpTimePassed = 0.0f;
 		}
 	}
 
@@ -168,13 +147,21 @@ void ABall::CancelFire()
 {
 	UE_LOG(LogTemp, Error, TEXT("Charge Up Cancelled"));
 	isDisableFireRelease = true;
+	Power = 0.0f;
+	ChargeUpTimePassed = 0.0f;
 }
 
 void ABall::LookUp(float value)
 {
 	FRotator cameraRotation = SpringArm->GetComponentRotation();
+	if (cameraRotation.Pitch < -70)
+		cameraRotation.Pitch = -70.0f;
+	if (cameraRotation.Pitch > 36)
+		cameraRotation.Pitch = 36.0f;
+
 	cameraRotation.Pitch += value;
 	SpringArm->SetWorldRotation(cameraRotation);
+
 }
 
 void ABall::LookLeft(float value)
@@ -184,17 +171,10 @@ void ABall::LookLeft(float value)
 	SpringArm->SetWorldRotation(cameraRotation);
 }
 
-//void ABall::ArrowLockUnlock()
-//{
-//	ArrowLock = !ArrowLock;
-//	UE_LOG(LogTemp, Warning, TEXT("ArrowLock"));
-//}
-
 void ABall::UpdateComponents()
 {
 	if (ZoomLength < MinZoomInLength) { ZoomLength = MinZoomInLength; }
 	if (ZoomLength > MaxZoomOutLength) { ZoomLength = MaxZoomOutLength; }
-	//Arrow->SetRelativeScale3D(FVector(ZoomLength / 10.0f, 15.0f, 15.0f));
 	SpringArm->TargetArmLength = ZoomLength;
 }
 
