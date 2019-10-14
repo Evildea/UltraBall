@@ -55,6 +55,9 @@ public:
 	UFUNCTION()
 	void LookLeft(float value);
 
+	UFUNCTION()
+	void DeadZoneFreeze();
+
 	// Designer Functionality
 	UPROPERTY(EditAnywhere, Category = "Designer", meta = (ClampMin = "100.0", ClampMax = "10000.0", UIMin = "100.0", UIMax = "10000.0"))
 	float MaxZoomOutLength;
@@ -73,13 +76,12 @@ public:
 
 private:
 
+	enum BallState {Idle, Charging, CancelCharging};
+
+	BallState CurrentBallState;
 	float ZoomLength;
 	float Power;
 	float ChargeUpTimePassed;
-	//bool ArrowLock;
-
-	bool isCharging;
-	bool isDisableFireRelease;
 
 	// Forces the components such as the arrow and spring arm to update
 	void UpdateComponents();

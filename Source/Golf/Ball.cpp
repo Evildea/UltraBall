@@ -46,8 +46,7 @@ ABall::ABall()
 	FullChargeUpPower = 1.0f;
 	TimeNeededToReachFullChargeUp = 1.0f;
 	ChargeUpTimePassed = 0.0f;
-	isCharging = false;
-	isDisableFireRelease = false;
+	CurrentBallState = Idle;
 
 	// Update all Components based on their inital values.
 	UpdateComponents();
@@ -69,7 +68,7 @@ void ABall::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	// Charge Up the Power if the Left Mouse is down and the Charge Up hasn't been cancelled.
-	if (isCharging && !isDisableFireRelease)
+	if (CurrentBallState == Charging)
 	{
 		// Charge up the Power.
 		ChargeUpTimePassed += DeltaTime;
@@ -117,38 +116,46 @@ void ABall::ZoomOut()
 
 void ABall::Fire()
 {
-	isCharging = !isCharging;
-
-	if (!isDisableFireRelease)
+	// If a charge is cancelled.
+	if (CurrentBallState == CancelCharging)
 	{
-		if (isCharging)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Start Charge Up"));
-			ChargeUpTimePassed = 0.0f;
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("End Charge Up and Fire"));
-
-			FVector offset = Dodecahedron->GetComponentLocation() - Camera->GetComponentLocation();
-			offset = offset.GetSafeNormal(1.0f) * Power * 10000000.0f;
-			Dodecahedron->SetPhysicsLinearVelocity(FVector(0.0f, 0.0f, 0.0f));
-			Dodecahedron->AddForce(offset);
-			Power = 0.0f;
-			ChargeUpTimePassed = 0.0f;
-		}
+		CurrentBallState = Idle;
+		ChargeUpTimePassed = 0.0f;
+		Power = 0.0f;
+		return;
 	}
 
-	if (!isCharging)
-		isDisableFireRelease = false;
+	// If the ball is Idle then start charging the ball.
+	if (CurrentBallState == Idle)
+	{
+		CurrentBallState = Charging;
+		ChargeUpTimePassed = 0.0f;
+		return;
+	}
+
+	// If the ball is charging then fire the ball.
+	if (CurrentBallState == Charging)
+	{
+		FVector offset = Dodecahedron->GetComponentLocation() - Camera->GetComponentLocation();
+		offset = offset.GetSafeNormal(1.0f) * Power * 10000000.0f;
+		Dodecahedron->SetPhysicsLinearVelocity(FVector(0.0f, 0.0f, 0.0f));
+		Dodecahedron->AddForce(offset);
+		Dodecahedron->SetEnableGravity(true);
+
+		ChargeUpTimePassed = 0.0f;
+		Power = 0.0f;
+
+		CurrentBallState = Idle;
+		return;
+	}
 }
 
 void ABall::CancelFire()
 {
-	UE_LOG(LogTemp, Error, TEXT("Charge Up Cancelled"));
-	isDisableFireRelease = true;
-	Power = 0.0f;
-	ChargeUpTimePassed = 0.0f;
+	if (CurrentBallState != Idle)
+	{
+		CurrentBallState = CancelCharging;
+	}
 }
 
 void ABall::LookUp(float value)
@@ -169,6 +176,12 @@ void ABall::LookLeft(float value)
 	FRotator cameraRotation = SpringArm->GetComponentRotation();
 	cameraRotation.Yaw += value;
 	SpringArm->SetWorldRotation(cameraRotation);
+}
+
+void ABall::DeadZoneFreeze()
+{
+	Dodecahedron->SetPhysicsLinearVelocity(FVector(0.0f, 0.0f, 0.0f));
+	Dodecahedron->SetEnableGravity(false);
 }
 
 void ABall::UpdateComponents()
