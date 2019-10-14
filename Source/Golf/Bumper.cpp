@@ -19,15 +19,17 @@ ABumper::ABumper()
 		Bumper->SetStaticMesh(Asset);
 		Bumper->SetSimulatePhysics(false);
 		Bumper->SetWorldScale3D(FVector(2.0f));
+		Bumper->SetMobility(EComponentMobility::Static);
 		RootComponent = Bumper;
 	}
 
 	Colider = CreateAbstractDefaultSubobject<UBoxComponent>("Colider");
-	Colider->SetWorldScale3D(FVector(3.75f, 0.25f, 1.0f));
-	Colider->SetRelativeLocation(FVector(70.5f, -0.5f, 0.0f));
+	Colider->SetWorldScale3D(FVector(4.1f, 0.7f, 1.1f));
+	Colider->SetRelativeLocation(FVector(65.5f, 1.0f, 0.0f));
 	Colider->SetWorldRotation(FRotator(0.0f, -90.000183f, 0.0f));
 	Colider->SetupAttachment(RootComponent);
 	Colider->OnComponentBeginOverlap.AddDynamic(this, &ABumper::OnOverlapBegin);
+	Colider->SetMobility(EComponentMobility::Static);
 	
 	BouncePower = 30.0f;
 
@@ -53,6 +55,7 @@ void ABumper::OnOverlapBegin(UPrimitiveComponent * OverlappedComp, AActor * Othe
 	if ((OtherActor != nullptr) && (OtherActor != this) && (OtherComp != nullptr))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Hit Detected"));
+		OtherComp->SetPhysicsLinearVelocity(FVector(0.0f, 0.0f, 0.0f));
 		OtherComp->AddForce(Bumper->GetForwardVector() * OtherComp->GetMass() * BouncePower * 10000.0f);
 	}
 

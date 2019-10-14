@@ -23,6 +23,7 @@ ABall::ABall()
 		UStaticMesh* Asset = DodecaMesh.Object;
 		Dodecahedron->SetStaticMesh(Asset);
 		Dodecahedron->SetSimulatePhysics(true);
+		Dodecahedron->SetRelativeScale3D(FVector(5.0f, 5.0f, 5.0f));
 		//Dodecahedron->BodyInstance.SetCollisionProfileName
 		RootComponent = Dodecahedron;
 	}
