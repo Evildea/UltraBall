@@ -28,7 +28,7 @@ public:
 
 	// Visible Components
 	UPROPERTY(VisibleAnywhere)
-	UStaticMeshComponent* Dodecahedron;
+	UStaticMeshComponent* UltraBall;
 
 	UPROPERTY(VisibleAnywhere)
 	class UCameraComponent* Camera;
@@ -75,7 +75,7 @@ public:
 	float TimeNeededToReachFullChargeUp;
 
 	UPROPERTY(EditAnywhere, Category = "Designer", meta = (ClampMin = "0.01", ClampMax = "30.0", UIMin = "0.01", UIMax = "30.0"))
-	float FullChargeUpPower;
+	float MaxPowerPossibleAtFullChargeUp;
 
 	UPROPERTY(EditAnywhere, Category = "Designer", meta = (ClampMin = "1.0", ClampMax = "500.0", UIMin = "1.0", UIMax = "500.0"))
 	float MaxDistanceOffGroundConsideredAir;

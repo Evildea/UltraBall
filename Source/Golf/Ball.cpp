@@ -16,15 +16,15 @@ ABall::ABall()
 	PrimaryActorTick.bCanEverTick = true;
 
 	// Setup static mesh for ball
-	Dodecahedron = CreateDefaultSubobject<UStaticMeshComponent>("Dodecahedron");
+	UltraBall = CreateDefaultSubobject<UStaticMeshComponent>("UltraBall");
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> DodecaMesh(TEXT("StaticMesh'/Game/Models/Dodeca.Dodeca'"));
 	if (DodecaMesh.Succeeded())
 	{
 		UStaticMesh* Asset = DodecaMesh.Object;
-		Dodecahedron->SetStaticMesh(Asset);
-		Dodecahedron->SetSimulatePhysics(true);
-		Dodecahedron->SetRelativeScale3D(FVector(5.0f, 5.0f, 5.0f));
-		RootComponent = Dodecahedron;
+		UltraBall->SetStaticMesh(Asset);
+		UltraBall->SetSimulatePhysics(true);
+		UltraBall->SetRelativeScale3D(FVector(5.0f, 5.0f, 5.0f));
+		RootComponent = UltraBall;
 	}
 
 	// Setup Spring Arm
@@ -44,7 +44,7 @@ ABall::ABall()
 	// Set up initial values that can't be modified by the Designer.
 	ZoomLength = 0.0f;
 	Power = 0.0f;
-	FullChargeUpPower = 1.0f;
+	MaxPowerPossibleAtFullChargeUp = 1.0f;
 	TimeNeededToReachFullChargeUp = 1.0f;
 	ChargeUpTimePassed = 0.0f;
 	CurrentBallState = Idle;
@@ -79,10 +79,10 @@ void ABall::Tick(float DeltaTime)
 		// Charge up the Power.
 		ChargeUpTimePassed += DeltaTime;
 
-		Power = (FullChargeUpPower / TimeNeededToReachFullChargeUp) * ChargeUpTimePassed;
+		Power = (MaxPowerPossibleAtFullChargeUp / TimeNeededToReachFullChargeUp) * ChargeUpTimePassed;
 
-		if (Power > FullChargeUpPower)
-			Power = FullChargeUpPower;
+		if (Power > MaxPowerPossibleAtFullChargeUp)
+			Power = MaxPowerPossibleAtFullChargeUp;
 	}
 	
 	// This whether the ball is currently in the air.
@@ -162,7 +162,6 @@ void ABall::ZoomOut()
 
 void ABall::Fire()
 {
-
 	// If a charge is cancelled.
 	if (CurrentBallState == CancelCharging)
 	{
@@ -190,26 +189,22 @@ void ABall::EndFire()
 	// If the ball is charging then fire the ball.
 	if (CurrentBallState == Charging)
 	{
-		FVector offset = Dodecahedron->GetComponentLocation() - Camera->GetComponentLocation();
+		FVector offset = UltraBall->GetComponentLocation() - Camera->GetComponentLocation();
 		offset = offset.GetSafeNormal(1.0f) * Power * 10000000.0f;
-		Dodecahedron->SetPhysicsLinearVelocity(FVector(0.0f, 0.0f, 0.0f));
-		Dodecahedron->AddForce(offset);
-		Dodecahedron->SetEnableGravity(true);
+		UltraBall->SetPhysicsLinearVelocity(FVector(0.0f, 0.0f, 0.0f));
+		UltraBall->AddForce(offset);
+		UltraBall->SetEnableGravity(true);
 
 		ChargeUpTimePassed = 0.0f;
 		Power = 0.0f;
 		CurrentBallState = Idle;
-
-		return;
 	}
 }
 
 void ABall::CancelFire()
 {
 	if (CurrentBallState != Idle)
-	{
 		CurrentBallState = CancelCharging;
-	}
 }
 
 void ABall::LookUp(float value)
@@ -234,8 +229,8 @@ void ABall::LookLeft(float value)
 
 void ABall::DeadZoneFreeze()
 {
-	Dodecahedron->SetPhysicsLinearVelocity(FVector(0.0f, 0.0f, 0.0f));
-	Dodecahedron->SetEnableGravity(false);
+	UltraBall->SetPhysicsLinearVelocity(FVector(0.0f, 0.0f, 0.0f));
+	UltraBall->SetEnableGravity(false);
 	NumberOfAirShotsTaken = 0;
 }
 
