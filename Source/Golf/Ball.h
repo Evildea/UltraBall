@@ -47,6 +47,9 @@ public:
 	void Fire();
 
 	UFUNCTION()
+	void EndFire();
+
+	UFUNCTION()
 	void CancelFire();
 
 	UFUNCTION()
@@ -74,6 +77,12 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Designer", meta = (ClampMin = "0.01", ClampMax = "30.0", UIMin = "0.01", UIMax = "30.0"))
 	float FullChargeUpPower;
 
+	UPROPERTY(EditAnywhere, Category = "Designer", meta = (ClampMin = "1.0", ClampMax = "500.0", UIMin = "1.0", UIMax = "500.0"))
+	float MaxDistanceOffGroundConsideredAir;
+
+	UPROPERTY(EditAnywhere, Category = "Designer")
+	int MaxNumberOfShotsAllowedInTheAir;
+
 private:
 
 	enum BallState {Idle, Charging, CancelCharging};
@@ -82,6 +91,13 @@ private:
 	float ZoomLength;
 	float Power;
 	float ChargeUpTimePassed;
+	int NumberOfAirShotsTaken;
+	bool inTheAir;
+
+	FHitResult Result;
+	FVector Start;
+	FVector End;
+	ECollisionChannel CollisionChannel;
 
 	// Forces the components such as the arrow and spring arm to update
 	void UpdateComponents();

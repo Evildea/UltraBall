@@ -24,7 +24,6 @@ ABall::ABall()
 		Dodecahedron->SetStaticMesh(Asset);
 		Dodecahedron->SetSimulatePhysics(true);
 		Dodecahedron->SetRelativeScale3D(FVector(5.0f, 5.0f, 5.0f));
-		//Dodecahedron->BodyInstance.SetCollisionProfileName
 		RootComponent = Dodecahedron;
 	}
 
@@ -49,6 +48,11 @@ ABall::ABall()
 	TimeNeededToReachFullChargeUp = 1.0f;
 	ChargeUpTimePassed = 0.0f;
 	CurrentBallState = Idle;
+	MaxNumberOfShotsAllowedInTheAir = 1;
+	NumberOfAirShotsTaken = 0;
+	MaxDistanceOffGroundConsideredAir = 100.0f;
+	ECollisionChannel CollisionChannel = ECC_Visibility;
+	inTheAir = false;
 
 	// Update all Components based on their inital values.
 	UpdateComponents();
@@ -80,8 +84,48 @@ void ABall::Tick(float DeltaTime)
 		if (Power > FullChargeUpPower)
 			Power = FullChargeUpPower;
 	}
+	
+	// This whether the ball is currently in the air.
+	Start = GetActorLocation();
+	End = GetActorLocation();
+	End.Z -= MaxDistanceOffGroundConsideredAir;
+	GetWorld()->LineTraceSingleByChannel(Result, Start, End, CollisionChannel, FCollisionQueryParams::DefaultQueryParam, FCollisionResponseParams::DefaultResponseParam);
 
+	if (Result.GetActor() != NULL)
+	{
+		inTheAir = false;
+		NumberOfAirShotsTaken = 0;
+	}
+	else
+		inTheAir = true;
+
+	// DEBUG MESSAGES
 	GEngine->AddOnScreenDebugMessage(1, 5.f, FColor::Red, FString::Printf(TEXT("Charge Power is %f"), Power));
+	if (inTheAir)
+	{
+		GEngine->AddOnScreenDebugMessage(2, 5.f, FColor::Red, FString::Printf(TEXT("In the air")));
+		GEngine->AddOnScreenDebugMessage(3, 5.f, FColor::Blue, FString::Printf(TEXT("Remaining In-air Shots: %d"), MaxNumberOfShotsAllowedInTheAir - NumberOfAirShotsTaken));
+	}
+	else
+	{
+		GEngine->AddOnScreenDebugMessage(2, 5.f, FColor::Red, FString::Printf(TEXT("On the ground")));
+		GEngine->AddOnScreenDebugMessage(3, 5.f, FColor::Blue, FString::Printf(TEXT("In-air shots irrelevant")));
+	}
+
+	switch (CurrentBallState)
+	{
+	case ABall::Idle:
+		GEngine->AddOnScreenDebugMessage(4, 5.f, FColor::White, FString::Printf(TEXT("Idle")));
+		break;
+	case ABall::Charging:
+		GEngine->AddOnScreenDebugMessage(4, 5.f, FColor::White, FString::Printf(TEXT("Charging")));
+		break;
+	case ABall::CancelCharging:
+		GEngine->AddOnScreenDebugMessage(4, 5.f, FColor::White, FString::Printf(TEXT("CancelCharging")));
+		break;
+	default:
+		break;
+	}
 
 }
 
@@ -92,7 +136,7 @@ void ABall::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 	// Start Charge Up and End Charge Up for firing.
 	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &ABall::Fire);
-	PlayerInputComponent->BindAction("Fire", IE_Released, this, &ABall::Fire);
+	PlayerInputComponent->BindAction("Fire", IE_Released, this, &ABall::EndFire);
 
 	PlayerInputComponent->BindAction("CancelFire", IE_Pressed, this, &ABall::CancelFire);
 
@@ -118,23 +162,31 @@ void ABall::ZoomOut()
 
 void ABall::Fire()
 {
+
 	// If a charge is cancelled.
 	if (CurrentBallState == CancelCharging)
 	{
 		CurrentBallState = Idle;
 		ChargeUpTimePassed = 0.0f;
 		Power = 0.0f;
+		if (inTheAir)
+			NumberOfAirShotsTaken--;
 		return;
 	}
 
 	// If the ball is Idle then start charging the ball.
-	if (CurrentBallState == Idle)
+	if (CurrentBallState == Idle && NumberOfAirShotsTaken < MaxNumberOfShotsAllowedInTheAir)
 	{
 		CurrentBallState = Charging;
 		ChargeUpTimePassed = 0.0f;
+		if (inTheAir)
+			NumberOfAirShotsTaken++;
 		return;
 	}
+}
 
+void ABall::EndFire()
+{
 	// If the ball is charging then fire the ball.
 	if (CurrentBallState == Charging)
 	{
@@ -146,8 +198,8 @@ void ABall::Fire()
 
 		ChargeUpTimePassed = 0.0f;
 		Power = 0.0f;
-
 		CurrentBallState = Idle;
+
 		return;
 	}
 }
@@ -184,6 +236,7 @@ void ABall::DeadZoneFreeze()
 {
 	Dodecahedron->SetPhysicsLinearVelocity(FVector(0.0f, 0.0f, 0.0f));
 	Dodecahedron->SetEnableGravity(false);
+	NumberOfAirShotsTaken = 0;
 }
 
 void ABall::UpdateComponents()
