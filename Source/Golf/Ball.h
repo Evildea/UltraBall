@@ -36,6 +36,9 @@ public:
 	UPROPERTY(VisibleAnywhere)
 	class USpringArmComponent* SpringArm;
 
+	UPROPERTY(VisibleAnywhere)
+	class UPointLightComponent* Pointlight;
+
 	// Callable functions
 	UFUNCTION()
 	void ZoomIn();
@@ -85,7 +88,7 @@ public:
 
 private:
 
-	enum BallState {Idle, Charging, CancelCharging};
+	enum BallState {Idle, Charging};
 
 	BallState CurrentBallState;
 	float ZoomLength;
@@ -93,11 +96,13 @@ private:
 	float ChargeUpTimePassed;
 	int NumberOfAirShotsTaken;
 	bool inTheAir;
+	float inTheAirBurnOut;
 
 	FHitResult Result;
 	FVector Start;
 	FVector End;
 	ECollisionChannel CollisionChannel;
+	FVector AngularVelocity;
 
 	// Forces the components such as the arrow and spring arm to update
 	void UpdateComponents();

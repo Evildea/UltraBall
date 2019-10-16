@@ -6,6 +6,8 @@
 #include "Components/InputComponent.h" 
 #include "Camera/CameraComponent.h" 
 #include "GameFramework/SpringArmComponent.h" 
+//#include "Materials/MaterialInstanceDynamic.h" 
+#include "Components/PointLightComponent.h" 
 
 #include <Runtime/Engine/Classes/Engine/Engine.h>
 
@@ -17,13 +19,12 @@ ABall::ABall()
 
 	// Setup static mesh for ball
 	UltraBall = CreateDefaultSubobject<UStaticMeshComponent>("UltraBall");
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> DodecaMesh(TEXT("StaticMesh'/Game/Models/Dodeca.Dodeca'"));
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> DodecaMesh(TEXT("StaticMesh'/Game/Models/Ultraball.Ultraball'"));
 	if (DodecaMesh.Succeeded())
 	{
 		UStaticMesh* Asset = DodecaMesh.Object;
 		UltraBall->SetStaticMesh(Asset);
 		UltraBall->SetSimulatePhysics(true);
-		UltraBall->SetRelativeScale3D(FVector(5.0f, 5.0f, 5.0f));
 		RootComponent = UltraBall;
 	}
 
@@ -35,6 +36,14 @@ ABall::ABall()
 	// Setup Camera
 	Camera = CreateDefaultSubobject<UCameraComponent>("camera");
 	Camera->SetupAttachment(SpringArm);
+
+	// Setup Point Light
+	Pointlight = CreateDefaultSubobject<UPointLightComponent>("light");
+	Pointlight->SetAttenuationRadius(300.0f);
+	Pointlight->SetSourceRadius(40.0f);
+	Pointlight->SetIntensity(0.0f);
+	Pointlight->SetLightColor(FLinearColor(1.0f, 0.0f, 0.0f, 1.0f));
+	Pointlight->SetupAttachment(RootComponent);
 
 	// Set up inital values that can be modified by the Designer.
 	MinZoomInLength = 200.0f;
@@ -53,6 +62,7 @@ ABall::ABall()
 	MaxDistanceOffGroundConsideredAir = 100.0f;
 	ECollisionChannel CollisionChannel = ECC_Visibility;
 	inTheAir = false;
+	inTheAirBurnOut = 0.0f;
 
 	// Update all Components based on their inital values.
 	UpdateComponents();
@@ -73,24 +83,21 @@ void ABall::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	// Charge Up the Power if the Left Mouse is down and the Charge Up hasn't been cancelled.
+	// This section charges the power of the ball if the Left Mouse button is down.
 	if (CurrentBallState == Charging)
 	{
 		// Charge up the Power.
 		ChargeUpTimePassed += DeltaTime;
-
 		Power = (MaxPowerPossibleAtFullChargeUp / TimeNeededToReachFullChargeUp) * ChargeUpTimePassed;
-
 		if (Power > MaxPowerPossibleAtFullChargeUp)
 			Power = MaxPowerPossibleAtFullChargeUp;
 	}
 	
-	// This whether the ball is currently in the air.
+	// This section determines whether the ball is currently in the air.
 	Start = GetActorLocation();
 	End = GetActorLocation();
 	End.Z -= MaxDistanceOffGroundConsideredAir;
 	GetWorld()->LineTraceSingleByChannel(Result, Start, End, CollisionChannel, FCollisionQueryParams::DefaultQueryParam, FCollisionResponseParams::DefaultResponseParam);
-
 	if (Result.GetActor() != NULL)
 	{
 		inTheAir = false;
@@ -98,6 +105,25 @@ void ABall::Tick(float DeltaTime)
 	}
 	else
 		inTheAir = true;
+
+	// This section determines how black to make the ball when out of charges in the air.
+	if (inTheAir && NumberOfAirShotsTaken == MaxNumberOfShotsAllowedInTheAir && CurrentBallState != Charging)
+	{
+		inTheAirBurnOut += DeltaTime;
+		if (inTheAirBurnOut > 1.0f)
+			inTheAirBurnOut = 1.0f;
+	}
+	else
+	{
+		inTheAirBurnOut -= DeltaTime;
+		if (inTheAirBurnOut < 0.0f)
+			inTheAirBurnOut = 0.0f;
+	}
+
+	// This section determines the colour of the ball. If it's charging it becomes reder. If it's out of charges it becomes blacker.
+	Pointlight->SetIntensity(((1.0f / MaxPowerPossibleAtFullChargeUp) * Power) * 9000.0f);
+	UltraBall->SetScalarParameterValueOnMaterials("Power", (1.0f / MaxPowerPossibleAtFullChargeUp) * Power);
+	UltraBall->SetScalarParameterValueOnMaterials("InAir", inTheAirBurnOut);
 
 	// DEBUG MESSAGES
 	GEngine->AddOnScreenDebugMessage(1, 5.f, FColor::Red, FString::Printf(TEXT("Charge Power is %f"), Power));
@@ -119,11 +145,6 @@ void ABall::Tick(float DeltaTime)
 		break;
 	case ABall::Charging:
 		GEngine->AddOnScreenDebugMessage(4, 5.f, FColor::White, FString::Printf(TEXT("Charging")));
-		break;
-	case ABall::CancelCharging:
-		GEngine->AddOnScreenDebugMessage(4, 5.f, FColor::White, FString::Printf(TEXT("CancelCharging")));
-		break;
-	default:
 		break;
 	}
 
@@ -162,23 +183,12 @@ void ABall::ZoomOut()
 
 void ABall::Fire()
 {
-	// If a charge is cancelled.
-	if (CurrentBallState == CancelCharging)
-	{
-		CurrentBallState = Idle;
-		ChargeUpTimePassed = 0.0f;
-		Power = 0.0f;
-		if (inTheAir)
-			NumberOfAirShotsTaken--;
-		return;
-	}
-
 	// If the ball is Idle then start charging the ball.
 	if (CurrentBallState == Idle && NumberOfAirShotsTaken < MaxNumberOfShotsAllowedInTheAir)
 	{
 		CurrentBallState = Charging;
 		ChargeUpTimePassed = 0.0f;
-		if (inTheAir)
+		if (inTheAir && UltraBall->IsGravityEnabled())
 			NumberOfAirShotsTaken++;
 		return;
 	}
@@ -193,10 +203,15 @@ void ABall::EndFire()
 		offset = offset.GetSafeNormal(1.0f) * Power * 10000000.0f;
 		UltraBall->SetPhysicsLinearVelocity(FVector(0.0f, 0.0f, 0.0f));
 		UltraBall->AddForce(offset);
-		UltraBall->SetEnableGravity(true);
+		if (!UltraBall->IsGravityEnabled())
+		{
+			UltraBall->SetEnableGravity(true);
+			UltraBall->SetAllPhysicsAngularVelocity(AngularVelocity, false);
+		}
 
-		ChargeUpTimePassed = 0.0f;
 		Power = 0.0f;
+		ChargeUpTimePassed = 0.0f;
+		Pointlight->SetIntensity(0.0f);
 		CurrentBallState = Idle;
 	}
 }
@@ -204,7 +219,10 @@ void ABall::EndFire()
 void ABall::CancelFire()
 {
 	if (CurrentBallState != Idle)
-		CurrentBallState = CancelCharging;
+		CurrentBallState = Idle;
+	Power = 0.0f;
+	ChargeUpTimePassed = 0.0f;
+	Pointlight->SetIntensity(0.0f);
 }
 
 void ABall::LookUp(float value)
@@ -229,7 +247,9 @@ void ABall::LookLeft(float value)
 
 void ABall::DeadZoneFreeze()
 {
-	UltraBall->SetPhysicsLinearVelocity(FVector(0.0f, 0.0f, 0.0f));
+	AngularVelocity = UltraBall->GetPhysicsAngularVelocity();
+	UltraBall->SetAllPhysicsLinearVelocity(FVector(0.0f, 0.0f, 0.0f), false);
+	UltraBall->SetAllPhysicsAngularVelocity(FVector(0.0f, 0.0f, 0.0f), false);
 	UltraBall->SetEnableGravity(false);
 	NumberOfAirShotsTaken = 0;
 }
