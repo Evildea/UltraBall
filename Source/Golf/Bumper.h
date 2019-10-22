@@ -25,10 +25,13 @@ public:
 
 	// Visible Components
 	UPROPERTY(VisibleAnywhere)
-	UStaticMeshComponent* Bumper;
+	USkeletalMeshComponent* Bumper;
 
 	UPROPERTY(VisibleAnywhere)
-	class UBoxComponent * Colider;
+	class UBoxComponent* Colider;
+
+	UPROPERTY(VisibleAnywhere)
+	class UAnimMontage* Animation;
 	
 	// Designer Functionality
 	UPROPERTY(EditAnywhere, Category = "Designer", meta = (ClampMin = "0.1", ClampMax = "100.0", UIMin = "0.1", UIMax = "100.0"))

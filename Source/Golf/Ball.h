@@ -36,6 +36,9 @@ public:
 	UPROPERTY(VisibleAnywhere)
 	class USpringArmComponent* SpringArm;
 
+	UPROPERTY(VisibleAnywhere)
+	class UPointLightComponent* Pointlight;
+
 	// Callable functions
 	UFUNCTION()
 	void ZoomIn();
@@ -83,23 +86,46 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Designer")
 	int MaxNumberOfShotsAllowedInTheAir;
 
+	// Sphere Coliders
+	UPROPERTY(VisibleAnywhere)
+	class USphereComponent* sphere1;
+	class USphereComponent* sphere2;
+	class USphereComponent* sphere3;
+	class USphereComponent* sphere4;
+	class USphereComponent* sphere5;
+	class USphereComponent* sphere6;
+	class USphereComponent* sphere7;
+	class USphereComponent* sphere8;
+	class USphereComponent* sphere9;
+	class USphereComponent* sphere10;
+	class USphereComponent* sphere11;
+	class USphereComponent* sphere12;
+
 private:
 
-	enum BallState {Idle, Charging, CancelCharging};
+	enum BallState {Idle, Charging};
+	enum BallSide { none, side1, side2, side3, side4, side5, side6, side7, side8, side9, side10, side11, side12 };
 
 	BallState CurrentBallState;
+	BallSide CurrentSideTouched;
 	float ZoomLength;
 	float Power;
 	float ChargeUpTimePassed;
 	int NumberOfAirShotsTaken;
 	bool inTheAir;
+	float inTheAirBurnOut;
 
 	FHitResult Result;
 	FVector Start;
 	FVector End;
 	ECollisionChannel CollisionChannel;
+	FVector AngularVelocity;
 
 	// Forces the components such as the arrow and spring arm to update
 	void UpdateComponents();
+
+	void GenerateSphere(class USphereComponent* &a_sphere, FName a_name, FVector a_location);
+	void GetSideFacing(class USphereComponent* &a_sphere, BallSide a_side);
+	
 
 };
