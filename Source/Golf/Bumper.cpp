@@ -13,7 +13,7 @@ ABumper::ABumper()
 	PrimaryActorTick.bCanEverTick = true;
 
 	Bumper = CreateDefaultSubobject<USkeletalMeshComponent>("Bumper");
-	static ConstructorHelpers::FObjectFinder<USkeletalMesh> BumperMesh(TEXT("SkeletalMesh'/Game/Models/Animations/M_Bumper.M_Bumper'"));
+	static ConstructorHelpers::FObjectFinder<USkeletalMesh> BumperMesh(TEXT("SkeletalMesh'/Game/Models/M_Bumper.M_Bumper'"));
 	if (BumperMesh.Succeeded())
 	{
 		USkeletalMesh* Asset = BumperMesh.Object;
@@ -33,7 +33,7 @@ ABumper::ABumper()
 	Colider->SetMobility(EComponentMobility::Static);
 	Colider->SetupAttachment(RootComponent);
 
-	static ConstructorHelpers::FObjectFinder<UAnimMontage> AnimationObj(TEXT("AnimMontage'/Game/Models/Animations/BumperMontage.BumperMontage'"));
+	static ConstructorHelpers::FObjectFinder<UAnimMontage> AnimationObj(TEXT("AnimMontage'/Game/Models/BumperMontage.BumperMontage'"));
 	if (AnimationObj.Succeeded())
 	{
 		Animation = AnimationObj.Object;

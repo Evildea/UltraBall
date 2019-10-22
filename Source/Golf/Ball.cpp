@@ -6,6 +6,8 @@
 #include "Components/InputComponent.h" 
 #include "Camera/CameraComponent.h" 
 #include "GameFramework/SpringArmComponent.h" 
+
+#include "Materials/MaterialInstanceDynamic.h" 
 #include "Components/PointLightComponent.h" 
 
 #include <Runtime/Engine/Classes/Engine/Engine.h>
@@ -53,7 +55,7 @@ ABall::ABall()
 	// Set up initial values that can't be modified by the Designer.
 	ZoomLength = 0.0f;
 	Power = 0.0f;
-	MaxPowerPossibleAtFullChargeUp = 1.0f;
+	MaxPowerPossibleAtFullChargeUp = 3.0f;
 	TimeNeededToReachFullChargeUp = 1.0f;
 	ChargeUpTimePassed = 0.0f;
 	CurrentBallState = Idle;
@@ -122,6 +124,26 @@ void ABall::Tick(float DeltaTime)
 
 	// This section determines how black to make the ball when out of charges in the air.
 	if (inTheAir && NumberOfAirShotsTaken == MaxNumberOfShotsAllowedInTheAir && CurrentBallState != Charging)
+	{
+		inTheAirBurnOut += DeltaTime;
+		if (inTheAirBurnOut > 1.0f)
+			inTheAirBurnOut = 1.0f;
+	}
+	else
+	{
+		inTheAirBurnOut -= DeltaTime;
+		if (inTheAirBurnOut < 0.0f)
+			inTheAirBurnOut = 0.0f;
+	}
+
+	// This section determines the colour of the ball. If it's charging it becomes reder. If it's out of charges it becomes blacker.
+	Pointlight->SetIntensity(((1.0f / MaxPowerPossibleAtFullChargeUp) * Power) * 9000.0f);
+	UltraBall->SetScalarParameterValueOnMaterials("Power", (1.0f / MaxPowerPossibleAtFullChargeUp) * Power);
+	UltraBall->SetScalarParameterValueOnMaterials("InAir", inTheAirBurnOut);
+
+	// DEBUG MESSAGES
+	GEngine->AddOnScreenDebugMessage(1, 5.f, FColor::Red, FString::Printf(TEXT("Charge Power is %f"), Power));
+	if (inTheAir)
 	{
 		inTheAirBurnOut += DeltaTime;
 		if (inTheAirBurnOut > 1.0f)
