@@ -86,6 +86,9 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Designer")
 	int MaxNumberOfShotsAllowedInTheAir;
 
+	UPROPERTY(EditAnywhere, Category = "Designer", meta = (ClampMin = "0.10", ClampMax = "0.30", UIMin = "0.10", UIMax = "0.30"))
+	float Squishiness;
+
 	// Sphere Coliders
 	UPROPERTY(VisibleAnywhere)
 	class USphereComponent* sphere1;
@@ -108,6 +111,7 @@ private:
 
 	BallState CurrentBallState;
 	BallSide CurrentSideTouched;
+	FVector TargetSquishAmount;
 	float ZoomLength;
 	float Power;
 	float ChargeUpTimePassed;
@@ -126,6 +130,7 @@ private:
 
 	void GenerateSphere(class USphereComponent* &a_sphere, FName a_name, FVector a_location);
 	void GetSideFacing(class USphereComponent* &a_sphere, BallSide a_side);
+	float ClampIt(float X1, float X2, float DeltaTime);
 	
 
 };

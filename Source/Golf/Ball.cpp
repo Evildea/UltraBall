@@ -65,6 +65,8 @@ ABall::ABall()
 	ECollisionChannel CollisionChannel = ECC_Visibility;
 	inTheAir = false;
 	inTheAirBurnOut = 0.0f;
+	TargetSquishAmount = FVector(1.0f, 1.0f, 1.0f);
+	Squishiness = 0.11f;
 
 	// Generate Spheres
 	GenerateSphere(sphere1, "sphere1", FVector(0.000000, 59.000000, 0.000000));
@@ -85,6 +87,7 @@ ABall::ABall()
 
 	// Tell the game controller to possess this player.
 	AutoPossessPlayer = EAutoReceiveInput::Player0;
+
 }
 
 // Called when the game starts or when spawned
@@ -176,79 +179,51 @@ void ABall::Tick(float DeltaTime)
 	switch (CurrentSideTouched)
 	{
 	case ABall::none:
-		GEngine->AddOnScreenDebugMessage(5, 5.f, FColor::Red, FString::Printf(TEXT("None")));
+		TargetSquishAmount = FVector(1.0, 1.0, 1.0);
 		break;
 	case ABall::side1:
-		GEngine->AddOnScreenDebugMessage(5, 5.f, FColor::Red, FString::Printf(TEXT("Side1")));
+		TargetSquishAmount = FVector(1.0, 1.0 - Squishiness, 1.0);
 		break;
 	case ABall::side2:
-		GEngine->AddOnScreenDebugMessage(5, 5.f, FColor::Red, FString::Printf(TEXT("Side2")));
+		TargetSquishAmount = FVector(1.0, 1.0 - Squishiness, 1.0);
 		break;
 	case ABall::side3:
-		GEngine->AddOnScreenDebugMessage(5, 5.f, FColor::Red, FString::Printf(TEXT("Side3")));
+		TargetSquishAmount = FVector(1.0 - Squishiness, 1.0, 1.0 - Squishiness);
 		break;
 	case ABall::side4:
-		GEngine->AddOnScreenDebugMessage(5, 5.f, FColor::Red, FString::Printf(TEXT("Side4")));
+		TargetSquishAmount = FVector(1.0 - Squishiness, 1.0, 1.0);
 		break;
 	case ABall::side5:
-		GEngine->AddOnScreenDebugMessage(5, 5.f, FColor::Red, FString::Printf(TEXT("Side5")));
+		TargetSquishAmount = FVector(1.0 - Squishiness, 1.0, 1.0);
 		break;
 	case ABall::side6:
-		GEngine->AddOnScreenDebugMessage(5, 5.f, FColor::Red, FString::Printf(TEXT("Side6")));
+		TargetSquishAmount = FVector(1.0, 1.0, 1.0 - Squishiness);
 		break;
 	case ABall::side7:
-		GEngine->AddOnScreenDebugMessage(5, 5.f, FColor::Red, FString::Printf(TEXT("Side7")));
+		TargetSquishAmount = FVector(1.0 - Squishiness, 1.0, 1.0);
 		break;
 	case ABall::side8:
-		GEngine->AddOnScreenDebugMessage(5, 5.f, FColor::Red, FString::Printf(TEXT("Side8")));
+		TargetSquishAmount = FVector(1.0 - Squishiness, 1.0, 1.0);
 		break;
 	case ABall::side9:
-		GEngine->AddOnScreenDebugMessage(5, 5.f, FColor::Red, FString::Printf(TEXT("Side9")));
+		TargetSquishAmount = FVector(1.0, 1.0, 1.0 - Squishiness);
 		break;
 	case ABall::side10:
-		GEngine->AddOnScreenDebugMessage(5, 5.f, FColor::Red, FString::Printf(TEXT("Side10")));
+		TargetSquishAmount = FVector(1.0, 1.0, 1.0 - Squishiness);
 		break;
 	case ABall::side11:
-		GEngine->AddOnScreenDebugMessage(5, 5.f, FColor::Red, FString::Printf(TEXT("Side11")));
+		TargetSquishAmount = FVector(1.0, 1.0, 1.0 - Squishiness);
 		break;
 	case ABall::side12:
-		GEngine->AddOnScreenDebugMessage(5, 5.f, FColor::Red, FString::Printf(TEXT("Side12")));
+		TargetSquishAmount = FVector(1.0 - Squishiness, 1.0, 1.0);
 		break;
 	}
 
-
-	//if (inTheAir)
-	//{
-	//	Squish += DeltaTime;
-	//	if (Squish > 1.0f)
-	//		Squish = 1.0f;
-	//}
-	//else
-	//{
-	//	Squish -= DeltaTime;
-	//	if (Squish < 0.5f)
-	//		Squish = 0.5f;
-	//}
-
-	//SetActorScale3D(FVector(Squish, Squish, Squish));
-	//
-	//FVector NewScale;
-	//NewScale.X = GetActorRotation().Yaw;
-	//NewScale.Y = GetActorRotation().Roll;
-	//NewScale.Z = GetActorRotation().Pitch;
-
-	//GEngine->AddOnScreenDebugMessage(5, 5.f, FColor::Red, FString::Printf(TEXT("Yaw %f"), NewScale.X));
-	//GEngine->AddOnScreenDebugMessage(6, 5.f, FColor::Red, FString::Printf(TEXT("Roll %f"), NewScale.Y));
-	//GEngine->AddOnScreenDebugMessage(7, 5.f, FColor::Red, FString::Printf(TEXT("Pitch %f"), NewScale.Z));
-
-
-
-
-
-	//SetActorScale3D(NewScale);
-	//SetActorScale3D(FVector(1.0f, 1.0f, Squish));
-
-	// -------------------------------------------------------------
+	FVector CurrentScale = GetActorScale3D();
+	CurrentScale.X = ClampIt(CurrentScale.X, TargetSquishAmount.X, DeltaTime);
+	CurrentScale.Y = ClampIt(CurrentScale.Y, TargetSquishAmount.Y, DeltaTime);
+	CurrentScale.Z = ClampIt(CurrentScale.Z, TargetSquishAmount.Z, DeltaTime);
+	UltraBall->SetWorldScale3D(CurrentScale);
 
 	// This section determines the colour of the ball. If it's charging it becomes reder. If it's out of charges it becomes blacker.
 	Pointlight->SetIntensity(((1.0f / MaxPowerPossibleAtFullChargeUp) * Power) * 9000.0f);
@@ -339,10 +314,14 @@ void ABall::EndFire()
 void ABall::CancelFire()
 {
 	if (CurrentBallState != Idle)
+	{
 		CurrentBallState = Idle;
-	Power = 0.0f;
-	ChargeUpTimePassed = 0.0f;
-	Pointlight->SetIntensity(0.0f);
+		Power = 0.0f;
+		ChargeUpTimePassed = 0.0f;
+		Pointlight->SetIntensity(0.0f);
+		if (inTheAir && UltraBall->IsGravityEnabled())
+			NumberOfAirShotsTaken--;
+	}
 }
 
 void ABall::LookUp(float value)
@@ -398,5 +377,23 @@ void ABall::GetSideFacing(USphereComponent *& a_sphere, BallSide a_side)
 	{
 		CurrentSideTouched = a_side;
 	}
+}
+
+float ABall::ClampIt(float X1, float X2, float DeltaTime)
+{
+	if (X1 < X2)
+	{
+		X1 += (DeltaTime / 3);
+		if (X1 > X2)
+			X1 = X2;
+	}
+	else
+	{
+		X1 -= (DeltaTime / 3);
+		if (X1 < X2)
+			X1 = X2;
+	}
+
+	return X1;
 }
 
