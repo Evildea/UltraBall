@@ -21,7 +21,7 @@ ADeadZone::ADeadZone()
 	ParticleSystem->SetRelativeScale3D(FVector(0.25f));
 	ParticleSystem->SetupAttachment(RootComponent);
 
-	static ConstructorHelpers::FObjectFinder<UParticleSystem> Particle(TEXT("ParticleSystem'/Game/ParticleSystems/Deadzone/Deadzone.Deadzone'"));
+	static ConstructorHelpers::FObjectFinder<UParticleSystem> Particle(TEXT("ParticleSystem'/Game/ParticleSystems/Pt_Deadzone.Pt_Deadzone'"));
 	if (Particle.Succeeded())
 	{
 		ParticleSystem->SetTemplate(Particle.Object);
