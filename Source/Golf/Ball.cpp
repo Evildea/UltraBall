@@ -235,6 +235,13 @@ void ABall::Tick(float DeltaTime)
 	UltraBall->SetScalarParameterValueOnMaterials("Power", (1.0f / MaxPowerPossibleAtFullChargeUp) * Power);
 	UltraBall->SetScalarParameterValueOnMaterials("InAir", inTheAirBurnOut);
 
+	// This section determines the transparency of the ball.
+	FVector distance = Camera->GetComponentLocation() - GetActorLocation();
+	float transparency = 1.0 - ((1.0 / 300.0) * distance.Size());
+	if (transparency < 0.0) { transparency = 0.0; }
+	if (transparency > 0.85) { transparency = 1.0; }
+		UltraBall->SetScalarParameterValueOnMaterials("Alpha", transparency);
+
 	// DEBUG MESSAGES
 	GEngine->AddOnScreenDebugMessage(1, 5.f, FColor::Red, FString::Printf(TEXT("Charge Power is %f"), Power));
 	if (inTheAir)
