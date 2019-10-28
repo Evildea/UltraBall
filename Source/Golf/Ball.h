@@ -90,18 +90,29 @@ public:
 	float Squishiness;
 
 	// Sphere Coliders
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(EditAnywhere)
 	class USphereComponent* sphere1;
+	UPROPERTY(EditAnywhere)
 	class USphereComponent* sphere2;
+	UPROPERTY(EditAnywhere)
 	class USphereComponent* sphere3;
+	UPROPERTY(EditAnywhere)
 	class USphereComponent* sphere4;
+	UPROPERTY(EditAnywhere)
 	class USphereComponent* sphere5;
+	UPROPERTY(EditAnywhere)
 	class USphereComponent* sphere6;
+	UPROPERTY(EditAnywhere)
 	class USphereComponent* sphere7;
+	UPROPERTY(EditAnywhere)
 	class USphereComponent* sphere8;
+	UPROPERTY(EditAnywhere)
 	class USphereComponent* sphere9;
+	UPROPERTY(EditAnywhere)
 	class USphereComponent* sphere10;
+	UPROPERTY(EditAnywhere)
 	class USphereComponent* sphere11;
+	UPROPERTY(EditAnywhere)
 	class USphereComponent* sphere12;
 
 private:

@@ -69,18 +69,18 @@ ABall::ABall()
 	Squishiness = 0.11f;
 
 	// Generate Spheres
-	GenerateSphere(sphere1, "sphere1", FVector(0.000000, 59.000000, 0.000000));
-	GenerateSphere(sphere2, "sphere2", FVector(0.000000, -58.000000, 0.000000));
-	GenerateSphere(sphere3, "sphere3", FVector(43.570080, -25.373051, 27.846146));
-	GenerateSphere(sphere4, "sphere4", FVector(-37.113037, 26.596243, -30.200563));
-	GenerateSphere(sphere5, "sphere5", FVector(-39.824680, 27.977360, 32.294655));
-	GenerateSphere(sphere6, "sphere6", FVector(12.170118, 21.939983, 54.742462));
-	GenerateSphere(sphere7, "sphere7", FVector(49.077190, 22.530632, 3.000000));
-	GenerateSphere(sphere8, "sphere8", FVector(-51.107643, -26.885223, 2.000000));
-	GenerateSphere(sphere9, "sphere9", FVector(-12.219960, -22.909710, 47.468994));
-	GenerateSphere(sphere10, "sphere10", FVector(17.750584, 27.529652, -43.923351));
-	GenerateSphere(sphere11, "sphere11", FVector(-12.372372, -28.623798, -44.363419));
-	GenerateSphere(sphere12, "sphere12", FVector(34.000000, -21.000011, -23.000000));
+	GenerateSphere(sphere1, "sphere1", FVector(0.0, 58.0, 0.0));
+	GenerateSphere(sphere2, "sphere2", FVector(0.0, -58.0, 0.0));
+	GenerateSphere(sphere3, "sphere3", FVector(43.0, -25.0, 30.0));
+	GenerateSphere(sphere4, "sphere4", FVector(-37.0, 25.0, -30.0));
+	GenerateSphere(sphere5, "sphere5", FVector(-37.0, 25.0, 30.0));
+	GenerateSphere(sphere6, "sphere6", FVector(12.0, 25.0, 48.0));
+	GenerateSphere(sphere7, "sphere7", FVector(49.0, 25.0, 0.0));
+	GenerateSphere(sphere8, "sphere8", FVector(-51.0, -25.0, 0.0));
+	GenerateSphere(sphere9, "sphere9", FVector(-12.0, -25.0, 48.0));
+	GenerateSphere(sphere10, "sphere10", FVector(12.0, 25.0, -48.0));
+	GenerateSphere(sphere11, "sphere11", FVector(-12.0, -25.0, -48.0));
+	GenerateSphere(sphere12, "sphere12", FVector(37.0, -25.0, -30.0));
 
 	// Update all Components based on their inital values.
 	UpdateComponents();
