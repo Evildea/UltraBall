@@ -6,10 +6,8 @@
 #include "Components/InputComponent.h" 
 #include "Camera/CameraComponent.h" 
 #include "GameFramework/SpringArmComponent.h" 
-
 #include "Materials/MaterialInstanceDynamic.h" 
 #include "Components/PointLightComponent.h" 
-
 #include <Runtime/Engine/Classes/Engine/Engine.h>
 #include "Components/SphereComponent.h" 
 
@@ -21,6 +19,7 @@ ABall::ABall()
 
 	// Setup static mesh for ball
 	UltraBall = CreateDefaultSubobject<UStaticMeshComponent>("UltraBall");
+
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> DodecaMesh(TEXT("StaticMesh'/Game/Models/Ultraball.Ultraball'"));
 	if (DodecaMesh.Succeeded())
 	{
@@ -28,6 +27,12 @@ ABall::ABall()
 		UltraBall->SetStaticMesh(Asset);
 		UltraBall->SetSimulatePhysics(true);
 		RootComponent = UltraBall;
+	}
+
+	static ConstructorHelpers::FObjectFinder<UMaterialInstance> Material(TEXT("MaterialInstanceConstant'/Game/Materials/UltraBall_MI.UltraBall_MI'"));
+	if (Material.Succeeded())
+	{
+		UltraBall->SetMaterial(0, Material.Object);
 	}
 
 	// Setup Spring Arm

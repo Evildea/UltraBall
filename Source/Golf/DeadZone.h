@@ -26,7 +26,7 @@ public:
 	UPROPERTY(VisibleAnywhere)
 	class USphereComponent * DeadZone;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(VisibleAnywhere)
 	class UParticleSystemComponent * ParticleSystem;
 	
 	UFUNCTION()

@@ -3,6 +3,7 @@
 #include "DeadZone.h"
 #include "Components/SphereComponent.h"
 #include "Particles/ParticleSystemComponent.h"
+#include "UObject/ConstructorHelpers.h" 
 #include "Ball.h"
 
 // Sets default values
@@ -12,12 +13,19 @@ ADeadZone::ADeadZone()
 	PrimaryActorTick.bCanEverTick = true;
 
 	DeadZone = CreateDefaultSubobject<USphereComponent>("DeadZone");
-	DeadZone->SetRelativeScale3D(FVector(1.0f, 1.0f, 1.0f));
+	DeadZone->SetRelativeScale3D(FVector(3.25f));
 	DeadZone->OnComponentBeginOverlap.AddDynamic(this, &ADeadZone::OnOverlapBegin);
 	RootComponent = DeadZone;
 
 	ParticleSystem = CreateDefaultSubobject<UParticleSystemComponent>("ParticleSystem");
+	ParticleSystem->SetRelativeScale3D(FVector(0.25f));
 	ParticleSystem->SetupAttachment(RootComponent);
+
+	static ConstructorHelpers::FObjectFinder<UParticleSystem> Particle(TEXT("ParticleSystem'/Game/ParticleSystems/Deadzone/Deadzone.Deadzone'"));
+	if (Particle.Succeeded())
+	{
+		ParticleSystem->SetTemplate(Particle.Object);
+	}
 
 }
 
