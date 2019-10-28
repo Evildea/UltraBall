@@ -49,8 +49,8 @@ void ADeadZone::OnOverlapBegin(UPrimitiveComponent * OverlappedComp, AActor * Ot
 	if ((OtherActor != nullptr) && (OtherActor != this) && (OtherComp != nullptr))
 	{
 		ABall* ball = Cast<ABall>(OtherActor);
-		ball->SetActorLocation(GetActorLocation());
-		ball->DeadZoneFreeze();
+		//ball->SetActorLocation(GetActorLocation());
+		ball->DeadZoneFreeze(GetActorLocation());
 	}
 }
 

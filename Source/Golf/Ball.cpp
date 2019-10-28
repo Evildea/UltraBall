@@ -237,7 +237,7 @@ void ABall::Tick(float DeltaTime)
 
 	// This section determines the transparency of the ball.
 	FVector distance = Camera->GetComponentLocation() - GetActorLocation();
-	float transparency = 1.0 - ((1.0 / 300.0) * distance.Size());
+	float transparency = 1.0 - ((1.0 / 400.0) * distance.Size());
 	if (transparency < 0.0) { transparency = 0.0; }
 	if (transparency > 0.85) { transparency = 1.0; }
 		UltraBall->SetScalarParameterValueOnMaterials("Alpha", transparency);
@@ -253,6 +253,15 @@ void ABall::Tick(float DeltaTime)
 	{
 		GEngine->AddOnScreenDebugMessage(2, 5.f, FColor::Red, FString::Printf(TEXT("On the ground")));
 		GEngine->AddOnScreenDebugMessage(3, 5.f, FColor::Blue, FString::Printf(TEXT("In-air shots irrelevant")));
+	}
+
+
+
+	if (!UltraBall->IsGravityEnabled())
+	{
+		FVector location = GravityFreezeTarget - GetActorLocation();
+		location = location.GetSafeNormal(1.0) * 500;
+		UltraBall->SetAllPhysicsLinearVelocity(location, false);
 	}
 
 }
@@ -356,8 +365,9 @@ void ABall::LookLeft(float value)
 	SpringArm->SetWorldRotation(cameraRotation);
 }
 
-void ABall::DeadZoneFreeze()
+void ABall::DeadZoneFreeze(FVector a_location)
 {
+	GravityFreezeTarget = a_location;
 	AngularVelocity = UltraBall->GetPhysicsAngularVelocity();
 	UltraBall->SetAllPhysicsLinearVelocity(FVector(0.0f, 0.0f, 0.0f), false);
 	UltraBall->SetAllPhysicsAngularVelocity(FVector(0.0f, 0.0f, 0.0f), false);

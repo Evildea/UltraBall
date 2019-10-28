@@ -62,7 +62,7 @@ public:
 	void LookLeft(float value);
 
 	UFUNCTION()
-	void DeadZoneFreeze();
+	void DeadZoneFreeze(FVector a_location);
 
 	// Designer Functionality
 	UPROPERTY(EditAnywhere, Category = "Designer", meta = (ClampMin = "100.0", ClampMax = "10000.0", UIMin = "100.0", UIMax = "10000.0"))
@@ -123,6 +123,7 @@ private:
 	BallState CurrentBallState;
 	BallSide CurrentSideTouched;
 	FVector TargetSquishAmount;
+	FVector GravityFreezeTarget;
 	float ZoomLength;
 	float Power;
 	float ChargeUpTimePassed;
