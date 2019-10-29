@@ -251,11 +251,17 @@ void ABall::Tick(float DeltaTime)
 
 	// This section determines the transparency of the ball.
 	FVector distance = Camera->GetComponentLocation() - GetActorLocation();
-	float transparency = 1.0f - ((1.0f / CurrentZoomAmount) * (distance.Size() - 100.0f));
-	if (transparency < 0.5f) { transparency = 0.0f; }
-	if (transparency >= 0.5f) { transparency = -((0.5 - transparency) * 2); }
-	if (transparency > 0.8f) { transparency = 1.0f; }
-	UltraBall->SetScalarParameterValueOnMaterials("Alpha", transparency);
+	if (distance.Size() < 60.0f)
+		UltraBall->SetVisibility(false);
+	else
+	{
+		UltraBall->SetVisibility(true);
+		float transparency = 1.0f - ((1.0f / CurrentZoomAmount) * (distance.Size() - 100.0f));
+		if (transparency < 0.5f) { transparency = 0.0f; }
+		if (transparency >= 0.5f) { transparency = -((0.5 - transparency) * 2); }
+		if (transparency > 0.8f) { transparency = 1.0f; }
+		UltraBall->SetScalarParameterValueOnMaterials("Alpha", transparency);
+	}
 
 }
 
