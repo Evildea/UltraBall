@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
-
+#include "Components/SphereComponent.h" 
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
 #include "Ball.generated.h"
@@ -62,7 +62,7 @@ public:
 	void LookLeft(float value);
 
 	UFUNCTION()
-	void DeadZoneFreeze(FVector a_location);
+	void ZoneEnter(FVector a_zoneLocation, FVector a_ZonelaunchDirection, float a_zonePower, int a_zoneType);
 
 	// Designer Functionality
 	UPROPERTY(EditAnywhere, Category = "Designer", meta = (ClampMin = "100.0", ClampMax = "10000.0", UIMin = "100.0", UIMax = "10000.0"))
@@ -91,45 +91,50 @@ public:
 
 	// Sphere Coliders
 	UPROPERTY(EditAnywhere)
-	class USphereComponent* sphere1;
+	USphereComponent* sphere1;
 	UPROPERTY(EditAnywhere)
-	class USphereComponent* sphere2;
+	USphereComponent* sphere2;
 	UPROPERTY(EditAnywhere)
-	class USphereComponent* sphere3;
+	USphereComponent* sphere3;
 	UPROPERTY(EditAnywhere)
-	class USphereComponent* sphere4;
+	USphereComponent* sphere4;
 	UPROPERTY(EditAnywhere)
-	class USphereComponent* sphere5;
+	USphereComponent* sphere5;
 	UPROPERTY(EditAnywhere)
-	class USphereComponent* sphere6;
+	USphereComponent* sphere6;
 	UPROPERTY(EditAnywhere)
-	class USphereComponent* sphere7;
+	USphereComponent* sphere7;
 	UPROPERTY(EditAnywhere)
-	class USphereComponent* sphere8;
+	USphereComponent* sphere8;
 	UPROPERTY(EditAnywhere)
-	class USphereComponent* sphere9;
+	USphereComponent* sphere9;
 	UPROPERTY(EditAnywhere)
-	class USphereComponent* sphere10;
+	USphereComponent* sphere10;
 	UPROPERTY(EditAnywhere)
-	class USphereComponent* sphere11;
+	USphereComponent* sphere11;
 	UPROPERTY(EditAnywhere)
-	class USphereComponent* sphere12;
+	USphereComponent* sphere12;
 
 private:
 
 	enum BallState {Idle, Charging};
-	enum BallSide { none, side1, side2, side3, side4, side5, side6, side7, side8, side9, side10, side11, side12 };
+	enum LauncherType {DeadZone, LaunchZone};
 
-	BallState CurrentBallState;
-	BallSide CurrentSideTouched;
-	FVector TargetSquishAmount;
-	FVector GravityFreezeTarget;
-	float ZoomLength;
-	float Power;
-	float ChargeUpTimePassed;
-	int NumberOfAirShotsTaken;
-	bool inTheAir;
-	float inTheAirBurnOut;
+	BallState					CurrentStateOfBall;
+	LauncherType				CurrentLauncherType;
+	float						CurrentLauncherPower;
+	int							CurrentSideOfBallDown;
+	FVector						LocationOfGravityFreeze;
+	FVector						LocationOfLauncherDirection;
+	float						CurrentZoomAmount;
+	float						CurrentCharge;
+	float						ChargeUpTimePassed;
+	float						MaxChargePossibleAtFullChargeUp;
+	int							NumberOfAirShotsTaken;
+	bool						inTheAir;
+	bool						isInCentreOfGravityFreeze;
+	float						inTheAirBurnOut;
+	USphereComponent*			CurrentSideOfBallDownList[12];
 
 	FHitResult Result;
 	FVector Start;
@@ -140,8 +145,8 @@ private:
 	// Forces the components such as the arrow and spring arm to update
 	void UpdateComponents();
 
-	void GenerateSphere(class USphereComponent* &a_sphere, FName a_name, FVector a_location);
-	void GetSideFacing(class USphereComponent* &a_sphere, BallSide a_side);
+	void GenerateSphere(int a_number, class USphereComponent* &a_sphere, FName a_name, FVector a_location);
+	void GetSideFacing(int a_side);
 	float ClampIt(float X1, float X2, float DeltaTime);
 	
 
