@@ -59,7 +59,7 @@ ABall::ABall()
 	// Set up initial values that can't be modified by the Designer.
 	CurrentZoomAmount = 0.0f;
 	CurrentCharge = 0.0f;
-	MaxChargePossibleAtFullChargeUp = 3.0f;
+	MaxChargePossibleAtFullChargeUp = 2.0f;
 	TimeNeededToReachFullChargeUp = 1.0f;
 	ChargeUpTimePassed = 0.0f;
 	CurrentStateOfBall = Idle;

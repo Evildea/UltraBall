@@ -78,7 +78,7 @@ public:
 	float TimeNeededToReachFullChargeUp;
 
 	UPROPERTY(EditAnywhere, Category = "Designer", meta = (ClampMin = "0.01", ClampMax = "30.0", UIMin = "0.01", UIMax = "30.0"))
-	float MaxPowerPossibleAtFullChargeUp;
+	float MaxChargePossibleAtFullChargeUp;
 
 	UPROPERTY(EditAnywhere, Category = "Designer", meta = (ClampMin = "1.0", ClampMax = "500.0", UIMin = "1.0", UIMax = "500.0"))
 	float MaxDistanceOffGroundConsideredAir;
@@ -129,7 +129,6 @@ private:
 	float						CurrentZoomAmount;
 	float						CurrentCharge;
 	float						ChargeUpTimePassed;
-	float						MaxChargePossibleAtFullChargeUp;
 	int							NumberOfAirShotsTaken;
 	bool						inTheAir;
 	bool						isInCentreOfGravityFreeze;
