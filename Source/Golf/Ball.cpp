@@ -200,13 +200,6 @@ void ABall::Tick(float DeltaTime)
 	CurrentScale.Z = ClampIt(CurrentScale.Z, TargetSquishAmount.Z, DeltaTime);
 	UltraBall->SetWorldScale3D(CurrentScale);
 
-	// This section determines the transparency of the ball.
-	FVector distance = Camera->GetComponentLocation() - GetActorLocation();
-	float transparency = 1.0 - ((1.0 / 400.0) * distance.Size());
-	if (transparency < 0.0) { transparency = 0.0; }
-	if (transparency > 0.85) { transparency = 1.0; }
-		UltraBall->SetScalarParameterValueOnMaterials("Alpha", transparency);
-
 	// This Snaps the Ball to the center of the DeadZone if it's gravity is frozen.
 	if (!UltraBall->IsGravityEnabled() && !isInCentreOfGravityFreeze)
 	{
@@ -238,11 +231,6 @@ void ABall::Tick(float DeltaTime)
 		}
 	}
 
-	// This section determines the colour of the ball. If it's charging it becomes reder. If it's out of charges it becomes blacker.
-	Pointlight->SetIntensity(((1.0f / MaxChargePossibleAtFullChargeUp) * CurrentCharge) * 9000.0f);
-	UltraBall->SetScalarParameterValueOnMaterials("Power", (1.0f / MaxChargePossibleAtFullChargeUp) * CurrentCharge);
-	UltraBall->SetScalarParameterValueOnMaterials("InAir", inTheAirBurnOut);
-
 	// DEBUG MESSAGES
 	GEngine->AddOnScreenDebugMessage(1, 5.f, FColor::Red, FString::Printf(TEXT("Charge CurrentCharge is %f"), CurrentCharge));
 	if (inTheAir)
@@ -255,7 +243,19 @@ void ABall::Tick(float DeltaTime)
 		GEngine->AddOnScreenDebugMessage(2, 5.f, FColor::Red, FString::Printf(TEXT("On the ground")));
 		GEngine->AddOnScreenDebugMessage(3, 5.f, FColor::Blue, FString::Printf(TEXT("In-air shots irrelevant")));
 	}
-	GEngine->AddOnScreenDebugMessage(11, 5.f, FColor::Red, FString::Printf(TEXT("burn out %f"), inTheAirBurnOut));
+
+	// This section determines the colour of the ball. If it's charging it becomes reder. If it's out of charges it becomes blacker.
+	Pointlight->SetIntensity(((1.0f / MaxChargePossibleAtFullChargeUp) * CurrentCharge) * 9000.0f);
+	UltraBall->SetScalarParameterValueOnMaterials("Power", (1.0f / MaxChargePossibleAtFullChargeUp) * CurrentCharge);
+	UltraBall->SetScalarParameterValueOnMaterials("BurnOut", inTheAirBurnOut);
+
+	// This section determines the transparency of the ball.
+	FVector distance = Camera->GetComponentLocation() - GetActorLocation();
+	float transparency = 1.0f - ((1.0f / CurrentZoomAmount) * (distance.Size() - 100.0f));
+	if (transparency < 0.5f) { transparency = 0.0f; }
+	if (transparency >= 0.5f) { transparency = -((0.5 - transparency) * 2); }
+	if (transparency > 0.8f) { transparency = 1.0f; }
+	UltraBall->SetScalarParameterValueOnMaterials("Alpha", transparency);
 
 }
 
