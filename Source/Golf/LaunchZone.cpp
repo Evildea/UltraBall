@@ -36,7 +36,7 @@ ALaunchZone::ALaunchZone()
 	Arrow->SetArrowColor(FColor(241,248,7,255));
 	Arrow->SetupAttachment(LaunchZone);
 
-	EjectPower = 30.0f;
+	EjectPower = 2.0f;
 
 }
 

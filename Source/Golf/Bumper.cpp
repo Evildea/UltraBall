@@ -39,7 +39,7 @@ ABumper::ABumper()
 		Animation = AnimationObj.Object;
 	}
 
-	BouncePower = 30.0f;
+	BouncePower = 2.0f;
 
 }
 
@@ -63,7 +63,9 @@ void ABumper::OnOverlapBegin(UPrimitiveComponent * OverlappedComp, AActor * Othe
 	if ((OtherActor != nullptr) && (OtherActor != this) && (OtherComp != nullptr))
 	{
 		OtherComp->SetPhysicsLinearVelocity(FVector(0.0f, 0.0f, 0.0f));
-		OtherComp->AddForce(Bumper->GetForwardVector() * OtherComp->GetMass() * BouncePower * 10000.0f);
+		OtherComp->AddImpulse(Bumper->GetForwardVector() * OtherComp->GetMass() * BouncePower * 1000.0f);
+
+
 		Bumper->PlayAnimation(Animation, false);
 	}
 

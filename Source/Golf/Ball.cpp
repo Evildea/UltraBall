@@ -223,9 +223,8 @@ void ABall::Tick(float DeltaTime)
 			if (CurrentLauncherType == LaunchZone)
 			{
 				FVector offset = LocationOfLauncherDirection - UltraBall->GetComponentLocation();
-				offset = offset.GetSafeNormal(1.0f) * UltraBall->GetMass() * CurrentLauncherPower * 10000.0f;
-				UltraBall->SetPhysicsLinearVelocity(FVector(0.0f, 0.0f, 0.0f));
-				UltraBall->AddForce(offset);
+				offset = offset.GetSafeNormal(1.0f) * UltraBall->GetMass() * CurrentLauncherPower * 1000.0f;
+				UltraBall->AddImpulse(offset);
 				UltraBall->SetEnableGravity(true);
 				UltraBall->SetAllPhysicsAngularVelocity(AngularVelocity, false);
 			}
@@ -314,9 +313,8 @@ void ABall::EndFire()
 	{
 		FVector offset = UltraBall->GetComponentLocation() - Camera->GetComponentLocation();
 		offset = offset.GetSafeNormal(1.0f) * UltraBall->GetMass() * CurrentCharge * 1000.0f;
+		UltraBall->SetPhysicsLinearVelocity(FVector(0.0f, 0.0f, 0.0f));
 		UltraBall->AddImpulse(offset);
-		//UltraBall->SetPhysicsLinearVelocity(FVector(0.0f, 0.0f, 0.0f));
-		//UltraBall->AddForce(offset);
 		if (!UltraBall->IsGravityEnabled())
 		{
 			UltraBall->SetEnableGravity(true);
