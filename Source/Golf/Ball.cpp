@@ -10,8 +10,8 @@
 #include "Components/PointLightComponent.h" 
 #include <Runtime/Engine/Classes/Engine/Engine.h>
 #include "Kismet/GameplayStatics.h"
+#include "Components/AudioComponent.h"
 
-// Sets default values
 ABall::ABall()
 {
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
@@ -19,13 +19,14 @@ ABall::ABall()
 
 	// Setup static mesh for ball
 	UltraBall = CreateDefaultSubobject<UStaticMeshComponent>("UltraBall");
-
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> DodecaMesh(TEXT("StaticMesh'/Game/Models/Ultraball.Ultraball'"));
 	if (DodecaMesh.Succeeded())
 	{
 		UStaticMesh* Asset = DodecaMesh.Object;
 		UltraBall->SetStaticMesh(Asset);
 		UltraBall->SetSimulatePhysics(true);
+		UltraBall->SetNotifyRigidBodyCollision(true);
+		UltraBall->OnComponentHit.AddDynamic(this, &ABall::OnHit);
 		RootComponent = UltraBall;
 	}
 
@@ -34,6 +35,10 @@ ABall::ABall()
 	{
 		UltraBall->SetMaterial(0, Material.Object);
 	}
+
+	// Setup Sound Component
+	Sound = CreateDefaultSubobject<UAudioComponent>("Sound");
+	Sound->SetupAttachment(RootComponent);
 
 	// Setup Spring Arm
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>("springarm");
@@ -56,15 +61,12 @@ ABall::ABall()
 	MinZoomInLength = 200.0f;
 	MaxZoomOutLength = 1000.0f;
 	ZoomInSpeed = 93.0f;
-
-	// Set up initial values that can't be modified by the Designer.
 	MaxChargePossibleAtFullChargeUp = 2.0f;
 	TimeNeededToReachFullChargeUp = 1.0f;
 	CurrentStateOfBall = Idle;
 	MaxNumberOfShotsAllowedInTheAir = 1;
 	NumberOfAirShotsTaken = 0;
 	MaxDistanceOffGroundConsideredAir = 100.0f;
-	CollisionChannel = ECC_Visibility;
 	Squishiness = 0.11f;
 
 	// Generate Spheres
@@ -100,6 +102,8 @@ void ABall::BeginPlay()
 	ChargeUpTimePassed = 0.0f;
 	CurrentZoomAmount = 0.0f;
 	CurrentCharge = 0.0f;
+	CollisionChannel = ECC_Visibility;
+	hasSoundPlayed = false;
 }
 
 // Called every frame
@@ -317,6 +321,15 @@ void ABall::ZoneEnter(FVector a_zoneLocation, FVector a_ZonelaunchDirection, flo
 		CurrentLauncherType = LaunchZone;
 }
 
+void ABall::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+{
+	if (Sound != nullptr && !hasSoundPlayed)
+	{
+		Sound->Play(0.0f);
+		hasSoundPlayed = true;
+	}
+}
+
 void ABall::UpdateComponents()
 {
 	if (CurrentZoomAmount < MinZoomInLength) { CurrentZoomAmount = MinZoomInLength; }
@@ -491,7 +504,18 @@ void ABall::inTheAirCheckTick()
 		NumberOfAirShotsTaken = 0;
 	}
 	else
+	{
 		inTheAir = true;
+		hasSoundPlayed = false;
+	}
+
+	End = GetActorLocation();
+	End.Z -= (MaxDistanceOffGroundConsideredAir / 2);
+	GetWorld()->LineTraceSingleByChannel(Result, Start, End, CollisionChannel, FCollisionQueryParams::DefaultQueryParam, FCollisionResponseParams::DefaultResponseParam);
+	if (Result.GetActor() == NULL)
+	{
+		hasSoundPlayed = false;
+	}
 }
 
 void ABall::ChargesRemainingCheckTick(float DeltaTime)
