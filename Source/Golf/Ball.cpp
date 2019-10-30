@@ -9,6 +9,7 @@
 #include "Materials/MaterialInstanceDynamic.h" 
 #include "Components/PointLightComponent.h" 
 #include <Runtime/Engine/Classes/Engine/Engine.h>
+#include "Kismet/GameplayStatics.h"
 
 // Sets default values
 ABall::ABall()
@@ -273,12 +274,9 @@ void ABall::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	// Start Charge Up and End Charge Up for firing.
 	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &ABall::Fire);
 	PlayerInputComponent->BindAction("Fire", IE_Released, this, &ABall::EndFire);
-
 	PlayerInputComponent->BindAction("CancelFire", IE_Pressed, this, &ABall::CancelFire);
-
 	PlayerInputComponent->BindAxis("LookUp", this, &ABall::LookUp);
 	PlayerInputComponent->BindAxis("LookLeft", this, &ABall::LookLeft);
-
 	PlayerInputComponent->BindAction("ZoomIn", IE_Pressed, this, &ABall::ZoomIn);
 	PlayerInputComponent->BindAction("ZoomOut", IE_Pressed, this, &ABall::ZoomOut);
 
@@ -315,19 +313,50 @@ void ABall::EndFire()
 	if (CurrentStateOfBall == Charging)
 	{
 		FVector offset = UltraBall->GetComponentLocation() - Camera->GetComponentLocation();
-		offset = offset.GetSafeNormal(1.0f) * CurrentCharge * 10000000.0f;
-		UltraBall->SetPhysicsLinearVelocity(FVector(0.0f, 0.0f, 0.0f));
-		UltraBall->AddForce(offset);
+		offset = offset.GetSafeNormal(1.0f) * UltraBall->GetMass() * CurrentCharge * 1000.0f;
+		UltraBall->AddImpulse(offset);
+		//UltraBall->SetPhysicsLinearVelocity(FVector(0.0f, 0.0f, 0.0f));
+		//UltraBall->AddForce(offset);
 		if (!UltraBall->IsGravityEnabled())
 		{
 			UltraBall->SetEnableGravity(true);
 			UltraBall->SetAllPhysicsAngularVelocity(AngularVelocity, false);
 		}
 
+		GEngine->AddOnScreenDebugMessage(20, 5.f, FColor::Red, FString::Printf(TEXT("Offset %f"), offset.Size()));
+
+		//-------------------------------------
+		// This section predicts what direction the shot will go.
+		//FPredictProjectilePathParams Predictor;
+		//FPredictProjectilePathResult Result;
+
+		//Predictor.StartLocation = GetActorLocation();
+
+		//offset = UltraBall->GetComponentLocation() - Camera->GetComponentLocation();
+		//offset = offset.GetSafeNormal(1.0f) * UltraBall->GetMass() * CurrentCharge * 100.0f;
+		//Predictor.LaunchVelocity = offset;
+		//Predictor.bTraceComplex = true;
+		//Predictor.ProjectileRadius = 10.0f;
+		//Predictor.TraceChannel = CollisionChannel;
+
+		//TArray<AActor*> ActorsToIgnore;
+		//ActorsToIgnore.Add(this);
+
+		//Predictor.ActorsToIgnore = ActorsToIgnore;
+		//Predictor.DrawDebugType = EDrawDebugTrace::ForDuration;
+		//Predictor.SimFrequency = 10.0f;
+		//Predictor.MaxSimTime = 3.0f;
+
+		//UGameplayStatics::PredictProjectilePath(GetWorld(), Predictor, Result);
+		//GEngine->AddOnScreenDebugMessage(13, 5.f, FColor::Red, FString::Printf(TEXT("offset X %f"), offset.X));
+		//-------------------------------------
+
+
 		CurrentCharge = 0.0f;
 		ChargeUpTimePassed = 0.0f;
 		Pointlight->SetIntensity(0.0f);
 		CurrentStateOfBall = Idle;
+
 	}
 }
 
