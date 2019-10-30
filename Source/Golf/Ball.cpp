@@ -58,20 +58,14 @@ ABall::ABall()
 	ZoomInSpeed = 93.0f;
 
 	// Set up initial values that can't be modified by the Designer.
-	CurrentZoomAmount = 0.0f;
-	CurrentCharge = 0.0f;
 	MaxChargePossibleAtFullChargeUp = 2.0f;
 	TimeNeededToReachFullChargeUp = 1.0f;
-	ChargeUpTimePassed = 0.0f;
 	CurrentStateOfBall = Idle;
 	MaxNumberOfShotsAllowedInTheAir = 1;
 	NumberOfAirShotsTaken = 0;
 	MaxDistanceOffGroundConsideredAir = 100.0f;
 	CollisionChannel = ECC_Visibility;
-	inTheAir = false;
-	inTheAirBurnOut = 0.0f;
 	Squishiness = 0.11f;
-	CurrentSideOfBallDown = 0;
 
 	// Generate Spheres
 	GenerateSphere(1, sphere1, "sphere1", FVector(0.0, 58.0, 0.0));
@@ -99,7 +93,13 @@ ABall::ABall()
 void ABall::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	isCameraLocked = true;
+	inTheAir = false;
+	inTheAirBurnOut = 0.0f;
+	CurrentSideOfBallDown = 0;
+	ChargeUpTimePassed = 0.0f;
+	CurrentZoomAmount = 0.0f;
+	CurrentCharge = 0.0f;
 }
 
 // Called every frame
@@ -115,121 +115,50 @@ void ABall::Tick(float DeltaTime)
 		CurrentCharge = (MaxChargePossibleAtFullChargeUp / TimeNeededToReachFullChargeUp) * ChargeUpTimePassed;
 		if (CurrentCharge > MaxChargePossibleAtFullChargeUp)
 			CurrentCharge = MaxChargePossibleAtFullChargeUp;
+
+		//This section predicts what direction the shot will go.
+		FVector offset;
+		if (isCameraLocked)
+			offset = UltraBall->GetComponentLocation() - Camera->GetComponentLocation();
+		else
+			offset = UltraBall->GetComponentLocation() - CameraLocationLock;
+
+		offset = offset.GetSafeNormal(1.0f) * UltraBall->GetMass() * CurrentCharge * 12.5f;
+		FPredictProjectilePathParams Predictor;
+		FPredictProjectilePathResult ProjectileResult;
+
+		Predictor.StartLocation = GetActorLocation();
+		Predictor.LaunchVelocity = offset;
+		Predictor.bTraceComplex = true;
+		Predictor.ProjectileRadius = 30.0f;
+		Predictor.TraceChannel = CollisionChannel;
+
+		TArray<AActor*> ActorsToIgnore;
+		ActorsToIgnore.Add(this);
+
+		Predictor.ActorsToIgnore = ActorsToIgnore;
+		Predictor.DrawDebugType = EDrawDebugTrace::ForOneFrame;
+		Predictor.SimFrequency = 10.0f;
+		Predictor.MaxSimTime = 1.2f;
+
+		UGameplayStatics::PredictProjectilePath(GetWorld(), Predictor, ProjectileResult);
+
 	}
 	
-	// This section determines whether the ball is currently in the air.
-	Start = GetActorLocation();
-	End = GetActorLocation();
-	End.Z -= MaxDistanceOffGroundConsideredAir;
-	GetWorld()->LineTraceSingleByChannel(Result, Start, End, CollisionChannel, FCollisionQueryParams::DefaultQueryParam, FCollisionResponseParams::DefaultResponseParam);
-	if (Result.GetActor() != NULL)
-	{
-		inTheAir = false;
-		NumberOfAirShotsTaken = 0;
-	}
-	else
-		inTheAir = true;
+	// This section checks and updates whether UltraBall is in the air.
+	inTheAirCheckTick();
 
-	// This section determines how black to make the ball when out of charges in the air.
-	if (inTheAir && NumberOfAirShotsTaken == MaxNumberOfShotsAllowedInTheAir && CurrentStateOfBall != Charging)
-	{
-		inTheAirBurnOut += (DeltaTime * 2);
-		if (inTheAirBurnOut > 1.0f)
-			inTheAirBurnOut = 1.0f;
-	}
-	else
-	{
-		inTheAirBurnOut -= (DeltaTime * 2);
-		if (inTheAirBurnOut < 0.0f)
-			inTheAirBurnOut = 0.0f;
-	}
+	// This section determines how many changes you have left when flying through the air.
+	ChargesRemainingCheckTick(DeltaTime);
 
-	// Get which way the ball is facing
-	CurrentSideOfBallDown = 0;
-	for (int i = 1; i < 12; i++)
-		GetSideFacing(i);
+	// This section squishes the UltraBall based on what side is facing down.
+	SquishTick(DeltaTime);
 
-	// Apply the correct level of squishyness depending on what way the ball is facing
-	FVector	TargetSquishAmount;
-	switch (CurrentSideOfBallDown)
-	{
-	case 0:
-		TargetSquishAmount = FVector(1.0, 1.0, 1.0);
-		break;
-	case 1:
-		TargetSquishAmount = FVector(1.0, 1.0 - Squishiness, 1.0);
-		break;
-	case 2:
-		TargetSquishAmount = FVector(1.0, 1.0 - Squishiness, 1.0);
-		break;
-	case 3:
-		TargetSquishAmount = FVector(1.0 - Squishiness, 1.0, 1.0 - Squishiness);
-		break;
-	case 4:
-		TargetSquishAmount = FVector(1.0 - Squishiness, 1.0, 1.0);
-		break;
-	case 5:
-		TargetSquishAmount = FVector(1.0 - Squishiness, 1.0, 1.0);
-		break;
-	case 6:
-		TargetSquishAmount = FVector(1.0, 1.0, 1.0 - Squishiness);
-		break;
-	case 7:
-		TargetSquishAmount = FVector(1.0 - Squishiness, 1.0, 1.0);
-		break;
-	case 8:
-		TargetSquishAmount = FVector(1.0 - Squishiness, 1.0, 1.0);
-		break;
-	case 9:
-		TargetSquishAmount = FVector(1.0, 1.0, 1.0 - Squishiness);
-		break;
-	case 10:
-		TargetSquishAmount = FVector(1.0, 1.0, 1.0 - Squishiness);
-		break;
-	case 11:
-		TargetSquishAmount = FVector(1.0, 1.0, 1.0 - Squishiness);
-		break;
-	case 12:
-		TargetSquishAmount = FVector(1.0 - Squishiness, 1.0, 1.0);
-		break;
-	}
+	// This section checks whether the UltraBall is inside a DeadZone or LaunchZone.
+	ZoneTick();
 
-	// Squish the ball
-	FVector CurrentScale = GetActorScale3D();
-	CurrentScale.X = ClampIt(CurrentScale.X, TargetSquishAmount.X, DeltaTime);
-	CurrentScale.Y = ClampIt(CurrentScale.Y, TargetSquishAmount.Y, DeltaTime);
-	CurrentScale.Z = ClampIt(CurrentScale.Z, TargetSquishAmount.Z, DeltaTime);
-	UltraBall->SetWorldScale3D(CurrentScale);
-
-	// This Snaps the Ball to the center of the DeadZone if it's gravity is frozen.
-	if (!UltraBall->IsGravityEnabled() && !isInCentreOfGravityFreeze)
-	{
-		FVector location = LocationOfGravityFreeze - GetActorLocation();
-		FVector size = LocationOfGravityFreeze - GetActorLocation();
-
-		// Move UltraBall Towards the Center of the DeadZone / LaunchZone
-		location = location.GetSafeNormal(1.0) * 800;
-		UltraBall->SetAllPhysicsLinearVelocity(location, false);
-
-		// Check if UltraBall is near the Center of the DeadZone / LaunchZone
-		if (size.Size() < 10.0)
-		{
-			// Freeze the ability of UltraBall to move towards the Center of the DeadZone / LaunchZone.
-			isInCentreOfGravityFreeze = true;
-			SetActorLocation(LocationOfGravityFreeze);
-			UltraBall->SetAllPhysicsLinearVelocity(FVector(0.0f), false);
-
-			// If UltraBall is a LaunchZone propel it in the correct direction.
-			if (CurrentLauncherType == LaunchZone)
-			{
-				FVector offset = LocationOfLauncherDirection - UltraBall->GetComponentLocation();
-				offset = offset.GetSafeNormal(1.0f) * UltraBall->GetMass() * CurrentLauncherPower * 1000.0f;
-				UltraBall->AddImpulse(offset);
-				UltraBall->SetEnableGravity(true);
-				UltraBall->SetAllPhysicsAngularVelocity(AngularVelocity, false);
-			}
-		}
-	}
+	// This section applies material changes based on the status of UltraBall.
+	MaterialTick(DeltaTime);
 
 	// DEBUG MESSAGES
 	GEngine->AddOnScreenDebugMessage(1, 5.f, FColor::Red, FString::Printf(TEXT("Charge CurrentCharge is %f"), CurrentCharge));
@@ -244,24 +173,10 @@ void ABall::Tick(float DeltaTime)
 		GEngine->AddOnScreenDebugMessage(3, 5.f, FColor::Blue, FString::Printf(TEXT("In-air shots irrelevant")));
 	}
 
-	// This section determines the colour of the ball. If it's charging it becomes reder. If it's out of charges it becomes blacker.
-	Pointlight->SetIntensity(((1.0f / MaxChargePossibleAtFullChargeUp) * CurrentCharge) * 9000.0f);
-	UltraBall->SetScalarParameterValueOnMaterials("Power", (1.0f / MaxChargePossibleAtFullChargeUp) * CurrentCharge);
-	UltraBall->SetScalarParameterValueOnMaterials("BurnOut", inTheAirBurnOut);
-
-	// This section determines the transparency of the ball.
-	FVector distance = Camera->GetComponentLocation() - GetActorLocation();
-	if (distance.Size() < 60.0f)
-		UltraBall->SetVisibility(false);
+	if (isCameraLocked)
+		GEngine->AddOnScreenDebugMessage(2, 5.f, FColor::Red, FString::Printf(TEXT("Camera is locked")));
 	else
-	{
-		UltraBall->SetVisibility(true);
-		float transparency = 1.0f - ((1.0f / CurrentZoomAmount) * (distance.Size() - 100.0f));
-		if (transparency < 0.5f) { transparency = 0.0f; }
-		if (transparency >= 0.5f) { transparency = -((0.5 - transparency) * 2); }
-		if (transparency > 0.8f) { transparency = 1.0f; }
-		UltraBall->SetScalarParameterValueOnMaterials("Alpha", transparency);
-	}
+		GEngine->AddOnScreenDebugMessage(2, 5.f, FColor::Red, FString::Printf(TEXT("Camera is unlocked")));
 
 }
 
@@ -278,6 +193,8 @@ void ABall::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	PlayerInputComponent->BindAxis("LookLeft", this, &ABall::LookLeft);
 	PlayerInputComponent->BindAction("ZoomIn", IE_Pressed, this, &ABall::ZoomIn);
 	PlayerInputComponent->BindAction("ZoomOut", IE_Pressed, this, &ABall::ZoomOut);
+	PlayerInputComponent->BindAction("CameraLock", IE_Pressed, this, &ABall::CameraUnLock);
+	PlayerInputComponent->BindAction("CameraLock", IE_Released, this, &ABall::CameraLock);
 
 }
 
@@ -311,7 +228,12 @@ void ABall::EndFire()
 	// If the ball is charging then fire the ball.
 	if (CurrentStateOfBall == Charging)
 	{
-		FVector offset = UltraBall->GetComponentLocation() - Camera->GetComponentLocation();
+		FVector offset;
+		if (isCameraLocked)
+			offset = UltraBall->GetComponentLocation() - Camera->GetComponentLocation();
+		else
+			offset = UltraBall->GetComponentLocation() - CameraLocationLock;
+
 		offset = offset.GetSafeNormal(1.0f) * UltraBall->GetMass() * CurrentCharge * 1000.0f;
 		UltraBall->SetPhysicsLinearVelocity(FVector(0.0f, 0.0f, 0.0f));
 		UltraBall->AddImpulse(offset);
@@ -320,32 +242,6 @@ void ABall::EndFire()
 			UltraBall->SetEnableGravity(true);
 			UltraBall->SetAllPhysicsAngularVelocity(AngularVelocity, false);
 		}
-
-		GEngine->AddOnScreenDebugMessage(20, 5.f, FColor::Red, FString::Printf(TEXT("Offset %f"), offset.Size()));
-
-		//-------------------------------------
-		// This section predicts what direction the shot will go.
-		//offset = offset.GetSafeNormal(1.0f) * UltraBall->GetMass() * CurrentCharge * 12.5f;
-		//FPredictProjectilePathParams Predictor;
-		//FPredictProjectilePathResult ProjectileResult;
-
-		//Predictor.StartLocation = GetActorLocation();
-		//Predictor.LaunchVelocity = offset;
-		//Predictor.bTraceComplex = true;
-		//Predictor.ProjectileRadius = 10.0f;
-		//Predictor.TraceChannel = CollisionChannel;
-
-		//TArray<AActor*> ActorsToIgnore;
-		//ActorsToIgnore.Add(this);
-
-		//Predictor.ActorsToIgnore = ActorsToIgnore;
-		//Predictor.DrawDebugType = EDrawDebugTrace::ForDuration;
-		//Predictor.SimFrequency = 10.0f;
-		//Predictor.MaxSimTime = 1.2f;
-
-		//UGameplayStatics::PredictProjectilePath(GetWorld(), Predictor, ProjectileResult);
-		//-------------------------------------
-
 
 		CurrentCharge = 0.0f;
 		ChargeUpTimePassed = 0.0f;
@@ -386,6 +282,21 @@ void ABall::LookLeft(float value)
 	FRotator cameraRotation = SpringArm->GetComponentRotation();
 	cameraRotation.Yaw += value;
 	SpringArm->SetWorldRotation(cameraRotation);
+}
+
+void ABall::CameraLock()
+{
+	isCameraLocked = true;
+	CurrentZoomAmount = CameraZoomAmountLock;
+	SpringArm->SetRelativeRotation(CameraAngleLock);
+}
+
+void ABall::CameraUnLock()
+{
+	isCameraLocked = false;
+	CameraZoomAmountLock = CurrentZoomAmount;
+	CameraAngleLock = SpringArm->GetComponentRotation();
+	CameraLocationLock = Camera->GetComponentLocation();
 }
 
 void ABall::ZoneEnter(FVector a_zoneLocation, FVector a_ZonelaunchDirection, float a_zonePower, int a_zoneType)
@@ -450,5 +361,152 @@ float ABall::ClampIt(float X1, float X2, float DeltaTime)
 	}
 
 	return X1;
+}
+
+void ABall::ZoneTick()
+{
+	// This checks if Gravity is disabled for the UltraBall and it's not yet in the centre of the Zone.
+	if (!UltraBall->IsGravityEnabled() && !isInCentreOfGravityFreeze)
+	{
+		FVector location = LocationOfGravityFreeze - GetActorLocation();
+		FVector size = LocationOfGravityFreeze - GetActorLocation();
+
+		// Move UltraBall Towards the Center of the DeadZone / LaunchZone
+		location = location.GetSafeNormal(1.0) * 800;
+		UltraBall->SetAllPhysicsLinearVelocity(location, false);
+
+		// Check if UltraBall is near the Center of the DeadZone / LaunchZone
+		if (size.Size() < 10.0)
+		{
+			// Freeze the ability of UltraBall to move towards the Center of the DeadZone / LaunchZone.
+			isInCentreOfGravityFreeze = true;
+			SetActorLocation(LocationOfGravityFreeze);
+			UltraBall->SetAllPhysicsLinearVelocity(FVector(0.0f), false);
+
+			// If UltraBall is a LaunchZone propel it in the correct direction.
+			if (CurrentLauncherType == LaunchZone)
+			{
+				FVector offset = LocationOfLauncherDirection - UltraBall->GetComponentLocation();
+				offset = offset.GetSafeNormal(1.0f) * UltraBall->GetMass() * CurrentLauncherPower * 1000.0f;
+				UltraBall->AddImpulse(offset);
+				UltraBall->SetEnableGravity(true);
+				UltraBall->SetAllPhysicsAngularVelocity(AngularVelocity, false);
+			}
+		}
+	}
+}
+
+void ABall::SquishTick(float DeltaTime)
+{
+	CurrentSideOfBallDown = 0;
+	for (int i = 1; i < 12; i++)
+		GetSideFacing(i);
+
+	// Apply the correct level of squishyness depending on what way the ball is facing
+	FVector	TargetSquishAmount;
+	switch (CurrentSideOfBallDown)
+	{
+	case 0:
+		TargetSquishAmount = FVector(1.0, 1.0, 1.0);
+		break;
+	case 1:
+		TargetSquishAmount = FVector(1.0, 1.0 - Squishiness, 1.0);
+		break;
+	case 2:
+		TargetSquishAmount = FVector(1.0, 1.0 - Squishiness, 1.0);
+		break;
+	case 3:
+		TargetSquishAmount = FVector(1.0 - Squishiness, 1.0, 1.0 - Squishiness);
+		break;
+	case 4:
+		TargetSquishAmount = FVector(1.0 - Squishiness, 1.0, 1.0);
+		break;
+	case 5:
+		TargetSquishAmount = FVector(1.0 - Squishiness, 1.0, 1.0);
+		break;
+	case 6:
+		TargetSquishAmount = FVector(1.0, 1.0, 1.0 - Squishiness);
+		break;
+	case 7:
+		TargetSquishAmount = FVector(1.0 - Squishiness, 1.0, 1.0);
+		break;
+	case 8:
+		TargetSquishAmount = FVector(1.0 - Squishiness, 1.0, 1.0);
+		break;
+	case 9:
+		TargetSquishAmount = FVector(1.0, 1.0, 1.0 - Squishiness);
+		break;
+	case 10:
+		TargetSquishAmount = FVector(1.0, 1.0, 1.0 - Squishiness);
+		break;
+	case 11:
+		TargetSquishAmount = FVector(1.0, 1.0, 1.0 - Squishiness);
+		break;
+	case 12:
+		TargetSquishAmount = FVector(1.0 - Squishiness, 1.0, 1.0);
+		break;
+	}
+
+	// Squish the ball
+	FVector CurrentScale = GetActorScale3D();
+	CurrentScale.X = ClampIt(CurrentScale.X, TargetSquishAmount.X, DeltaTime);
+	CurrentScale.Y = ClampIt(CurrentScale.Y, TargetSquishAmount.Y, DeltaTime);
+	CurrentScale.Z = ClampIt(CurrentScale.Z, TargetSquishAmount.Z, DeltaTime);
+	UltraBall->SetWorldScale3D(CurrentScale);
+}
+
+void ABall::MaterialTick(float DeltaTime)
+{
+	// BurnOut: This section determines how black to make the ball when it runs out of charges in the air.
+	UltraBall->SetScalarParameterValueOnMaterials("BurnOut", inTheAirBurnOut);
+
+	// Power: This section determines how red to make UltraBall if it's charging.
+	Pointlight->SetIntensity(((1.0f / MaxChargePossibleAtFullChargeUp) * CurrentCharge) * 9000.0f);
+	UltraBall->SetScalarParameterValueOnMaterials("Power", (1.0f / MaxChargePossibleAtFullChargeUp) * CurrentCharge);
+
+	// Alpha: This section determines how transparent to make UltraBall if the camera is too close.
+	FVector distance = Camera->GetComponentLocation() - GetActorLocation();
+	if (distance.Size() < 60.0f)
+		UltraBall->SetVisibility(false);
+	else
+	{
+		UltraBall->SetVisibility(true);
+		float transparency = 1.0f - ((1.0f / CurrentZoomAmount) * (distance.Size() - 100.0f));
+		if (transparency < 0.5f) { transparency = 0.0f; }
+		if (transparency >= 0.5f) { transparency = -((0.5 - transparency) * 2); }
+		if (transparency > 0.8f) { transparency = 1.0f; }
+		UltraBall->SetScalarParameterValueOnMaterials("Alpha", transparency);
+	}
+}
+
+void ABall::inTheAirCheckTick()
+{
+	Start = GetActorLocation();
+	End = GetActorLocation();
+	End.Z -= MaxDistanceOffGroundConsideredAir;
+	GetWorld()->LineTraceSingleByChannel(Result, Start, End, CollisionChannel, FCollisionQueryParams::DefaultQueryParam, FCollisionResponseParams::DefaultResponseParam);
+	if (Result.GetActor() != NULL)
+	{
+		inTheAir = false;
+		NumberOfAirShotsTaken = 0;
+	}
+	else
+		inTheAir = true;
+}
+
+void ABall::ChargesRemainingCheckTick(float DeltaTime)
+{
+	if (inTheAir && NumberOfAirShotsTaken == MaxNumberOfShotsAllowedInTheAir && CurrentStateOfBall != Charging)
+	{
+		inTheAirBurnOut += (DeltaTime * 2);
+		if (inTheAirBurnOut > 1.0f)
+			inTheAirBurnOut = 1.0f;
+	}
+	else
+	{
+		inTheAirBurnOut -= (DeltaTime * 2);
+		if (inTheAirBurnOut < 0.0f)
+			inTheAirBurnOut = 0.0f;
+	}
 }
 

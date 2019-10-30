@@ -62,6 +62,12 @@ public:
 	void LookLeft(float value);
 
 	UFUNCTION()
+	void CameraLock();
+
+	UFUNCTION()
+	void CameraUnLock();
+
+	UFUNCTION()
 	void ZoneEnter(FVector a_zoneLocation, FVector a_ZonelaunchDirection, float a_zonePower, int a_zoneType);
 
 	// Designer Functionality
@@ -134,6 +140,11 @@ private:
 	bool						isInCentreOfGravityFreeze;
 	float						inTheAirBurnOut;
 	USphereComponent*			CurrentSideOfBallDownList[12];
+	
+	bool						isCameraLocked;
+	float						CameraZoomAmountLock;
+	FRotator					CameraAngleLock;
+	FVector						CameraLocationLock;
 
 	FHitResult Result;
 	FVector Start;
@@ -147,6 +158,11 @@ private:
 	void GenerateSphere(int a_number, class USphereComponent* &a_sphere, FName a_name, FVector a_location);
 	void GetSideFacing(int a_side);
 	float ClampIt(float X1, float X2, float DeltaTime);
-	
+
+	void ZoneTick();
+	void SquishTick(float DeltaTime);
+	void MaterialTick(float DeltaTime);
+	void inTheAirCheckTick();
+	void ChargesRemainingCheckTick(float DeltaTime);
 
 };

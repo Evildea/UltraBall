@@ -4,6 +4,7 @@
 #include "Components/SphereComponent.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "UObject/ConstructorHelpers.h" 
+#include "Components/PointLightComponent.h" 
 #include "Ball.h"
 
 // Sets default values
@@ -16,6 +17,7 @@ ADeadZone::ADeadZone()
 	DeadZone = CreateDefaultSubobject<USphereComponent>("DeadZone");
 	DeadZone->SetRelativeScale3D(FVector(3.25f));
 	DeadZone->OnComponentBeginOverlap.AddDynamic(this, &ADeadZone::OnOverlapBegin);
+	DeadZone->SetMobility(EComponentMobility::Static);
 	RootComponent = DeadZone;
 
 	// Setup Particle System.
@@ -27,6 +29,15 @@ ADeadZone::ADeadZone()
 	static ConstructorHelpers::FObjectFinder<UParticleSystem> Particle(TEXT("ParticleSystem'/Game/ParticleSystems/Pt_Deadzone.Pt_Deadzone'"));
 	if (Particle.Succeeded())
 		ParticleSystem->SetTemplate(Particle.Object);
+
+	// Setup Point Light
+	Pointlight = CreateDefaultSubobject<UPointLightComponent>("light");
+	Pointlight->SetMobility(EComponentMobility::Static);
+	Pointlight->SetAttenuationRadius(300.0f);
+	Pointlight->SetSourceRadius(125.0f);
+	Pointlight->SetIntensity(5000.0f);
+	Pointlight->SetLightColor(FLinearColor(0.462077f, 0.158961f, 0.806952f, 1.0f));
+	Pointlight->SetupAttachment(RootComponent);
 
 }
 
