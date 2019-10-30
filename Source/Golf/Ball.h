@@ -39,6 +39,9 @@ public:
 	UPROPERTY(VisibleAnywhere)
 	class UPointLightComponent* Pointlight;
 
+	UPROPERTY(EditAnywhere)
+	class UAudioComponent* Sound;
+
 	// Callable functions
 	UFUNCTION()
 	void ZoomIn();
@@ -69,6 +72,9 @@ public:
 
 	UFUNCTION()
 	void ZoneEnter(FVector a_zoneLocation, FVector a_ZonelaunchDirection, float a_zonePower, int a_zoneType);
+
+	UFUNCTION()
+	void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
 	// Designer Functionality
 	UPROPERTY(EditAnywhere, Category = "Designer", meta = (ClampMin = "100.0", ClampMax = "10000.0", UIMin = "100.0", UIMax = "10000.0"))
@@ -137,6 +143,7 @@ private:
 	float						ChargeUpTimePassed;
 	int							NumberOfAirShotsTaken;
 	bool						inTheAir;
+	bool						hasSoundPlayed;
 	bool						isInCentreOfGravityFreeze;
 	float						inTheAirBurnOut;
 	USphereComponent*			CurrentSideOfBallDownList[12];
