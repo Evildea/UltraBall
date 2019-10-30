@@ -31,6 +31,9 @@ public:
 
 	UPROPERTY(VisibleAnywhere)
 		class UArrowComponent* Arrow;
+
+	UPROPERTY(VisibleAnywhere)
+		class UPointLightComponent* Pointlight;
 	
 	// Designer Functionality
 	UPROPERTY(EditAnywhere, Category = "Designer", meta = (ClampMin = "0.1", ClampMax = "100.0", UIMin = "0.1", UIMax = "100.0"))

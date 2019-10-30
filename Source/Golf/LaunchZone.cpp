@@ -5,6 +5,7 @@
 #include "Particles/ParticleSystemComponent.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Components/ArrowComponent.h"
+#include "Components/PointLightComponent.h" 
 #include "Ball.h"
 
 // Sets default values
@@ -17,6 +18,7 @@ ALaunchZone::ALaunchZone()
 	LaunchZone = CreateDefaultSubobject<USphereComponent>("LaunchZone");
 	LaunchZone->SetRelativeScale3D(FVector(3.25f));
 	LaunchZone->OnComponentBeginOverlap.AddDynamic(this, &ALaunchZone::OnOverlapBegin);
+	LaunchZone->SetMobility(EComponentMobility::Static);
 	RootComponent = LaunchZone;
 
 	// Setup Particle System.
@@ -35,6 +37,15 @@ ALaunchZone::ALaunchZone()
 	Arrow->SetHiddenInGame(false);
 	Arrow->SetArrowColor(FColor(241,248,7,255));
 	Arrow->SetupAttachment(LaunchZone);
+
+	// Setup Point Light
+	Pointlight = CreateDefaultSubobject<UPointLightComponent>("light");
+	Pointlight->SetMobility(EComponentMobility::Static);
+	Pointlight->SetAttenuationRadius(300.0f);
+	Pointlight->SetSourceRadius(125.0f);
+	Pointlight->SetIntensity(5000.0f);
+	Pointlight->SetLightColor(FLinearColor(1.0f, 1.0f, 0.006995f, 1.0f));
+	Pointlight->SetupAttachment(RootComponent);
 
 	EjectPower = 2.0f;
 
