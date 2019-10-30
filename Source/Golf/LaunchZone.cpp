@@ -25,7 +25,7 @@ ALaunchZone::ALaunchZone()
 	ParticleSystem->SetupAttachment(RootComponent);
 
 	// Link Particle System to its respective Particle Spawner.
-	static ConstructorHelpers::FObjectFinder<UParticleSystem> Particle(TEXT("ParticleSystem'/Game/ParticleSystems/Pt_Deadzone.Pt_Deadzone'"));
+	static ConstructorHelpers::FObjectFinder<UParticleSystem> Particle(TEXT("ParticleSystem'/Game/ParticleSystems/Pt_Launchzone.Pt_Launchzone'"));
 	if (Particle.Succeeded())
 		ParticleSystem->SetTemplate(Particle.Object);
 
@@ -33,6 +33,7 @@ ALaunchZone::ALaunchZone()
 	Arrow = CreateDefaultSubobject<UArrowComponent>("Arrow");
 	Arrow->SetRelativeLocation(FVector(40.0f, 0.0f, 0.0f));
 	Arrow->SetHiddenInGame(false);
+	Arrow->SetArrowColor(FColor(241,248,7,255));
 	Arrow->SetupAttachment(LaunchZone);
 
 	EjectPower = 30.0f;
