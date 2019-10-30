@@ -67,7 +67,7 @@ ABall::ABall()
 	MaxNumberOfShotsAllowedInTheAir = 1;
 	NumberOfAirShotsTaken = 0;
 	MaxDistanceOffGroundConsideredAir = 100.0f;
-	ECollisionChannel CollisionChannel = ECC_Visibility;
+	CollisionChannel = ECC_Visibility;
 	inTheAir = false;
 	inTheAirBurnOut = 0.0f;
 	Squishiness = 0.11f;
@@ -325,13 +325,11 @@ void ABall::EndFire()
 
 		//-------------------------------------
 		// This section predicts what direction the shot will go.
+		//offset = offset.GetSafeNormal(1.0f) * UltraBall->GetMass() * CurrentCharge * 12.5f;
 		//FPredictProjectilePathParams Predictor;
-		//FPredictProjectilePathResult Result;
+		//FPredictProjectilePathResult ProjectileResult;
 
 		//Predictor.StartLocation = GetActorLocation();
-
-		//offset = UltraBall->GetComponentLocation() - Camera->GetComponentLocation();
-		//offset = offset.GetSafeNormal(1.0f) * UltraBall->GetMass() * CurrentCharge * 100.0f;
 		//Predictor.LaunchVelocity = offset;
 		//Predictor.bTraceComplex = true;
 		//Predictor.ProjectileRadius = 10.0f;
@@ -343,10 +341,9 @@ void ABall::EndFire()
 		//Predictor.ActorsToIgnore = ActorsToIgnore;
 		//Predictor.DrawDebugType = EDrawDebugTrace::ForDuration;
 		//Predictor.SimFrequency = 10.0f;
-		//Predictor.MaxSimTime = 3.0f;
+		//Predictor.MaxSimTime = 1.2f;
 
-		//UGameplayStatics::PredictProjectilePath(GetWorld(), Predictor, Result);
-		//GEngine->AddOnScreenDebugMessage(13, 5.f, FColor::Red, FString::Printf(TEXT("offset X %f"), offset.X));
+		//UGameplayStatics::PredictProjectilePath(GetWorld(), Predictor, ProjectileResult);
 		//-------------------------------------
 
 
