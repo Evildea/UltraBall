@@ -68,6 +68,7 @@ ABall::ABall()
 	NumberOfAirShotsTaken = 0;
 	MaxDistanceOffGroundConsideredAir = 100.0f;
 	Squishiness = 0.11f;
+	MaxParAllowed = 20;
 
 	// Generate Spheres
 	GenerateSphere(1, sphere1, "sphere1", FVector(0.0, 58.0, 0.0));
@@ -104,6 +105,7 @@ void ABall::BeginPlay()
 	CurrentCharge = 0.0f;
 	CollisionChannel = ECC_Visibility;
 	hasSoundPlayed = false;
+	CurrentPar = 0;
 }
 
 // Called every frame
@@ -251,6 +253,7 @@ void ABall::EndFire()
 		ChargeUpTimePassed = 0.0f;
 		Pointlight->SetIntensity(0.0f);
 		CurrentStateOfBall = Idle;
+		CurrentPar++;
 
 	}
 }
@@ -301,6 +304,11 @@ void ABall::CameraUnLock()
 	CameraZoomAmountLock = CurrentZoomAmount;
 	CameraAngleLock = SpringArm->GetComponentRotation();
 	CameraLocationLock = Camera->GetComponentLocation();
+}
+
+FString ABall::GetParString()
+{
+	return FString::Printf(TEXT("Par: %d/%d"), CurrentPar, MaxParAllowed);
 }
 
 void ABall::ZoneEnter(FVector a_zoneLocation, FVector a_ZonelaunchDirection, float a_zonePower, int a_zoneType)

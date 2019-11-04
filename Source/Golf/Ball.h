@@ -70,6 +70,9 @@ public:
 	UFUNCTION()
 	void CameraUnLock();
 
+	UFUNCTION(BlueprintCallable)
+	FString GetParString();
+
 	UFUNCTION()
 	void ZoneEnter(FVector a_zoneLocation, FVector a_ZonelaunchDirection, float a_zonePower, int a_zoneType);
 
@@ -100,6 +103,9 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Designer", meta = (ClampMin = "0.10", ClampMax = "0.30", UIMin = "0.10", UIMax = "0.30"))
 	float Squishiness;
+
+	UPROPERTY(EditAnywhere, Category = "Designer")
+	int MaxParAllowed;
 
 	// Sphere Coliders
 	UPROPERTY(EditAnywhere)
@@ -147,7 +153,7 @@ private:
 	bool						isInCentreOfGravityFreeze;
 	float						inTheAirBurnOut;
 	USphereComponent*			CurrentSideOfBallDownList[12];
-	
+	int							CurrentPar;
 	bool						isCameraLocked;
 	float						CameraZoomAmountLock;
 	FRotator					CameraAngleLock;
