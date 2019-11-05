@@ -39,10 +39,16 @@ public:
 	UPROPERTY(VisibleAnywhere)
 	class UPointLightComponent* Pointlight;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "Designer")
 	class UAudioComponent* Sound;
 
 	// Callable functions
+	UFUNCTION(BlueprintCallable)
+	bool getGamePauseState() { return isGamePaused; }
+
+	UFUNCTION(BlueprintCallable)
+	void setGamePauseState(bool isPaused) { isGamePaused = isPaused; }
+
 	UFUNCTION()
 	void ZoomIn();
 
@@ -72,6 +78,9 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	FString GetParString();
+
+	UFUNCTION()
+	void Pause();
 
 	UFUNCTION()
 	void ZoneEnter(FVector a_zoneLocation, FVector a_ZonelaunchDirection, float a_zonePower, int a_zoneType);
@@ -158,6 +167,7 @@ private:
 	float						CameraZoomAmountLock;
 	FRotator					CameraAngleLock;
 	FVector						CameraLocationLock;
+	bool isGamePaused;
 
 	FHitResult Result;
 	FVector Start;
