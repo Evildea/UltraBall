@@ -34,6 +34,9 @@ public:
 
 	UPROPERTY(VisibleAnywhere)
 		class UPointLightComponent* Pointlight;
+
+	UPROPERTY(EditAnywhere, Category = "Designer")
+		class UAudioComponent* Sound;
 	
 	// Designer Functionality
 	UPROPERTY(EditAnywhere, Category = "Designer", meta = (ClampMin = "0.1", ClampMax = "100.0", UIMin = "0.1", UIMax = "100.0"))

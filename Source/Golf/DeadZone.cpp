@@ -5,6 +5,7 @@
 #include "Particles/ParticleSystemComponent.h"
 #include "UObject/ConstructorHelpers.h" 
 #include "Components/PointLightComponent.h" 
+#include "Components/AudioComponent.h"
 #include "Ball.h"
 
 // Sets default values
@@ -62,6 +63,8 @@ void ADeadZone::OnOverlapBegin(UPrimitiveComponent * OverlappedComp, AActor * Ot
 	{
 		ABall* ball = Cast<ABall>(OtherActor);
 		ball->ZoneEnter(GetActorLocation(), FVector(0.0f), 0.0f, 0);
+		if (Sound != nullptr)
+			Sound->Play(0.0f);
 	}
 }
 
