@@ -106,6 +106,7 @@ void ABall::BeginPlay()
 	CollisionChannel = ECC_Visibility;
 	hasSoundPlayed = false;
 	CurrentPar = 0;
+	isGamePaused = false;
 }
 
 // Called every frame
@@ -201,6 +202,7 @@ void ABall::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	PlayerInputComponent->BindAction("ZoomOut", IE_Pressed, this, &ABall::ZoomOut);
 	PlayerInputComponent->BindAction("CameraLock", IE_Pressed, this, &ABall::CameraUnLock);
 	PlayerInputComponent->BindAction("CameraLock", IE_Released, this, &ABall::CameraLock);
+	PlayerInputComponent->BindAction("Pause", IE_Pressed, this, &ABall::Pause);
 
 }
 
@@ -309,6 +311,11 @@ void ABall::CameraUnLock()
 FString ABall::GetParString()
 {
 	return FString::Printf(TEXT("Par: %d/%d"), CurrentPar, MaxParAllowed);
+}
+
+void ABall::Pause()
+{
+	isGamePaused = !isGamePaused;
 }
 
 void ABall::ZoneEnter(FVector a_zoneLocation, FVector a_ZonelaunchDirection, float a_zonePower, int a_zoneType)
