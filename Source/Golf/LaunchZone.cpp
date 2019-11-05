@@ -6,6 +6,7 @@
 #include "UObject/ConstructorHelpers.h"
 #include "Components/ArrowComponent.h"
 #include "Components/PointLightComponent.h" 
+#include "Components/AudioComponent.h"
 #include "Ball.h"
 
 // Sets default values
@@ -72,6 +73,8 @@ void ALaunchZone::OnOverlapBegin(UPrimitiveComponent * OverlappedComp, AActor * 
 	{
 		ABall* ball = Cast<ABall>(OtherActor);
 		ball->ZoneEnter(GetActorLocation(), Arrow->GetComponentLocation(), EjectPower, 1);
+		if (Sound != nullptr)
+			Sound->Play(0.0f);
 	}
 }
 

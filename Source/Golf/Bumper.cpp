@@ -4,7 +4,8 @@
 #include "UObject/ConstructorHelpers.h" 
 #include "Components/SkeletalMeshComponent.h" 
 #include "Components/BoxComponent.h" 
-#include "Animation/AnimMontage.h" 
+#include "Animation/AnimMontage.h"
+#include "Components/AudioComponent.h"
 
 // Sets default values
 ABumper::ABumper()
@@ -67,6 +68,9 @@ void ABumper::OnOverlapBegin(UPrimitiveComponent * OverlappedComp, AActor * Othe
 
 
 		Bumper->PlayAnimation(Animation, false);
+
+		if (Sound != nullptr)
+			Sound->Play(0.0f);
 	}
 
 }
