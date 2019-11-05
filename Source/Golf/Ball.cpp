@@ -38,6 +38,7 @@ ABall::ABall()
 
 	// Setup Sound Component
 	Sound = CreateDefaultSubobject<UAudioComponent>("Sound");
+	Sound->SetAutoActivate(false);
 	Sound->SetupAttachment(RootComponent);
 
 	// Setup Spring Arm

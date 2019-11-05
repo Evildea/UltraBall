@@ -21,6 +21,11 @@ ADeadZone::ADeadZone()
 	DeadZone->SetMobility(EComponentMobility::Static);
 	RootComponent = DeadZone;
 
+	// Setup Sound Component
+	Sound = CreateDefaultSubobject<UAudioComponent>("Sound");
+	Sound->SetAutoActivate(false);
+	Sound->SetupAttachment(RootComponent);
+
 	// Setup Particle System.
 	ParticleSystem = CreateDefaultSubobject<UParticleSystemComponent>("ParticleSystem");
 	ParticleSystem->SetRelativeScale3D(FVector(0.25f));
@@ -63,8 +68,12 @@ void ADeadZone::OnOverlapBegin(UPrimitiveComponent * OverlappedComp, AActor * Ot
 	{
 		ABall* ball = Cast<ABall>(OtherActor);
 		ball->ZoneEnter(GetActorLocation(), FVector(0.0f), 0.0f, 0);
-		if (Sound != nullptr)
-			Sound->Play(0.0f);
+
+		if (ball != nullptr && Sound != nullptr)
+		{
+			if (!Sound->IsPlaying())
+				Sound->Play(0.0f);
+		}
 	}
 }
 

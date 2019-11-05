@@ -22,6 +22,11 @@ ALaunchZone::ALaunchZone()
 	LaunchZone->SetMobility(EComponentMobility::Static);
 	RootComponent = LaunchZone;
 
+	// Setup Sound Component
+	Sound = CreateDefaultSubobject<UAudioComponent>("Sound");
+	Sound->SetAutoActivate(false);
+	Sound->SetupAttachment(RootComponent);
+
 	// Setup Particle System.
 	ParticleSystem = CreateDefaultSubobject<UParticleSystemComponent>("ParticleSystem");
 	ParticleSystem->SetRelativeScale3D(FVector(0.25f));
@@ -73,8 +78,12 @@ void ALaunchZone::OnOverlapBegin(UPrimitiveComponent * OverlappedComp, AActor * 
 	{
 		ABall* ball = Cast<ABall>(OtherActor);
 		ball->ZoneEnter(GetActorLocation(), Arrow->GetComponentLocation(), EjectPower, 1);
-		if (Sound != nullptr)
-			Sound->Play(0.0f);
+
+		if (ball != nullptr && Sound != nullptr)
+		{
+			if (!Sound->IsPlaying())
+				Sound->Play(0.0f);
+		}
 	}
 }
 
