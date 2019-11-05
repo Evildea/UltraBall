@@ -6,6 +6,7 @@
 #include "Components/BoxComponent.h" 
 #include "Animation/AnimMontage.h"
 #include "Components/AudioComponent.h"
+#include "Ball.h"
 
 // Sets default values
 ABumper::ABumper()
@@ -25,6 +26,11 @@ ABumper::ABumper()
 		Bumper->SetCollisionProfileName(FName("BlockAllDynamic"));
 		RootComponent = Bumper;
 	}
+
+	// Setup Sound Component
+	Sound = CreateDefaultSubobject<UAudioComponent>("Sound");
+	Sound->SetAutoActivate(false);
+	Sound->SetupAttachment(RootComponent);
 
 	Colider = CreateAbstractDefaultSubobject<UBoxComponent>("Colider");
 	Colider->SetWorldScale3D(FVector(4.1f, 0.7f, 1.1f));
@@ -65,12 +71,15 @@ void ABumper::OnOverlapBegin(UPrimitiveComponent * OverlappedComp, AActor * Othe
 	{
 		OtherComp->SetPhysicsLinearVelocity(FVector(0.0f, 0.0f, 0.0f));
 		OtherComp->AddImpulse(Bumper->GetForwardVector() * OtherComp->GetMass() * BouncePower * 1000.0f);
-
+		ABall* ball = Cast<ABall>(OtherActor);
 
 		Bumper->PlayAnimation(Animation, false);
 
-		if (Sound != nullptr)
-			Sound->Play(0.0f);
+		if (ball != nullptr && Sound != nullptr)
+		{
+			if (!Sound->IsPlaying())
+				Sound->Play(0.0f);
+		}
 	}
 
 }

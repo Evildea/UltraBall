@@ -38,6 +38,7 @@ ABall::ABall()
 
 	// Setup Sound Component
 	Sound = CreateDefaultSubobject<UAudioComponent>("Sound");
+	Sound->SetAutoActivate(false);
 	Sound->SetupAttachment(RootComponent);
 
 	// Setup Spring Arm
@@ -168,7 +169,7 @@ void ABall::Tick(float DeltaTime)
 	MaterialTick(DeltaTime);
 
 	// DEBUG MESSAGES
-	GEngine->AddOnScreenDebugMessage(1, 5.f, FColor::Red, FString::Printf(TEXT("Charge CurrentCharge is %f"), CurrentCharge));
+	/*GEngine->AddOnScreenDebugMessage(1, 5.f, FColor::Red, FString::Printf(TEXT("Charge CurrentCharge is %f"), CurrentCharge));
 	if (inTheAir)
 	{
 		GEngine->AddOnScreenDebugMessage(2, 5.f, FColor::Red, FString::Printf(TEXT("In the air")));
@@ -183,7 +184,7 @@ void ABall::Tick(float DeltaTime)
 	if (isCameraLocked)
 		GEngine->AddOnScreenDebugMessage(2, 5.f, FColor::Red, FString::Printf(TEXT("Camera is locked")));
 	else
-		GEngine->AddOnScreenDebugMessage(2, 5.f, FColor::Red, FString::Printf(TEXT("Camera is unlocked")));
+		GEngine->AddOnScreenDebugMessage(2, 5.f, FColor::Red, FString::Printf(TEXT("Camera is unlocked")));*/
 
 }
 
