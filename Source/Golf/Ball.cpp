@@ -86,6 +86,7 @@ ABall::ABall()
 	MaxNumberOfShotsAllowedInTheAir = 1;		// The Maximum Amount of Shots the Player is allowed to take in the Air
 	MaxDistanceOffGroundConsideredAir = 100.0f;	// The Maximum Distance that is considered Off the Ground
 	Squishiness = 0.11f;	// How Squishy UltraBall is
+	SpeedAtWhichMeshTransitionsBackToComplex = 300.0f;
 	MaxParAllowed = 20;		// The Maximum Allowed Par to win the Level
 
 	// Update the Camera based on their inital values.
@@ -119,7 +120,8 @@ void ABall::BeginPlay()
 void ABall::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
+	
+	// This counter purely exists to stop mesh changes from happening too fast.
 	if (TimeSinceMeshChange < 100.0f)
 		TimeSinceMeshChange += DeltaTime;
 
@@ -177,7 +179,7 @@ void ABall::Tick(float DeltaTime)
 
 	if (TimeSinceMeshChange > 1.0f)
 	{
-		if (UltraBall->GetPhysicsLinearVelocity().Size() > 300.0f)
+		if (UltraBall->GetPhysicsLinearVelocity().Size() >= SpeedAtWhichMeshTransitionsBackToComplex)
 		{
 
 			if (UltraBall->GetStaticMesh() != SimpleAsset)
@@ -208,11 +210,11 @@ void ABall::Tick(float DeltaTime)
 		}
 	}
 
-	if (UltraBall->GetStaticMesh() == SimpleAsset)
-	GEngine->AddOnScreenDebugMessage(2, 5.f, FColor::Red, FString::Printf(TEXT("Simple %f"), GetVelocity().Size()));
+	//if (UltraBall->GetStaticMesh() == SimpleAsset)
+	//GEngine->AddOnScreenDebugMessage(2, 5.f, FColor::Red, FString::Printf(TEXT("Simple %f"), GetVelocity().Size()));
 
-	if (UltraBall->GetStaticMesh() == ComplexAsset)
-		GEngine->AddOnScreenDebugMessage(2, 5.f, FColor::Red, FString::Printf(TEXT("Complex %f"), GetVelocity().Size()));
+	//if (UltraBall->GetStaticMesh() == ComplexAsset)
+	//	GEngine->AddOnScreenDebugMessage(2, 5.f, FColor::Red, FString::Printf(TEXT("Complex %f"), GetVelocity().Size()));
 
 }
 

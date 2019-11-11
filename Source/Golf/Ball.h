@@ -110,6 +110,9 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Designer", meta = (ClampMin = "0.01", ClampMax = "30.0", UIMin = "0.01", UIMax = "30.0"))
 	float MaxChargePossibleAtFullChargeUp;
 
+	UPROPERTY(EditAnywhere, Category = "Designer", meta = (ClampMin = "1.0", ClampMax = "2000.0", UIMin = "1.0", UIMax = "2000.0"))
+	float SpeedAtWhichMeshTransitionsBackToComplex;
+
 	UPROPERTY(EditAnywhere, Category = "Designer", meta = (ClampMin = "1.0", ClampMax = "500.0", UIMin = "1.0", UIMax = "500.0"))
 	float MaxDistanceOffGroundConsideredAir;
 
