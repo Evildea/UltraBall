@@ -11,30 +11,33 @@
 #include <Runtime/Engine/Classes/Engine/Engine.h>
 #include "Kismet/GameplayStatics.h"
 #include "Components/AudioComponent.h"
+#include "PhysicsEngine/BodySetup.h"
 
 ABall::ABall()
 {
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	// Setup static mesh for ball
+	// Setup static mesh for UltraBall
 	UltraBall = CreateDefaultSubobject<UStaticMeshComponent>("UltraBall");
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> DodecaMesh(TEXT("StaticMesh'/Game/Models/Ultraball.Ultraball'"));
-	if (DodecaMesh.Succeeded())
-	{
-		UStaticMesh* Asset = DodecaMesh.Object;
-		UltraBall->SetStaticMesh(Asset);
-		UltraBall->SetSimulatePhysics(true);
-		UltraBall->SetNotifyRigidBodyCollision(true);
-		UltraBall->OnComponentHit.AddDynamic(this, &ABall::OnHit);
-		RootComponent = UltraBall;
-	}
 
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> UltraBallSimple(TEXT("StaticMesh'/Game/Models/UltraBallS.UltraBallS'"));
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> UltraBallComplex(TEXT("StaticMesh'/Game/Models/UltraBallC.UltraBallC'"));
+
+	SimpleAsset = UltraBallSimple.Object;
+	ComplexAsset = UltraBallComplex.Object;
+
+	UltraBall->SetStaticMesh(ComplexAsset);
+
+	UltraBall->SetSimulatePhysics(true);
+	UltraBall->SetNotifyRigidBodyCollision(true);
+	UltraBall->OnComponentHit.AddDynamic(this, &ABall::OnHit);
+	RootComponent = UltraBall;
+
+	// Apply Dynamic Material to UltraBall
 	static ConstructorHelpers::FObjectFinder<UMaterialInstance> Material(TEXT("MaterialInstanceConstant'/Game/Materials/UltraBall_MI.UltraBall_MI'"));
 	if (Material.Succeeded())
-	{
 		UltraBall->SetMaterial(0, Material.Object);
-	}
 
 	// Setup Sound Component
 	Sound = CreateDefaultSubobject<UAudioComponent>("Sound");
@@ -58,20 +61,7 @@ ABall::ABall()
 	Pointlight->SetLightColor(FLinearColor(1.0f, 0.0f, 0.0f, 1.0f));
 	Pointlight->SetupAttachment(RootComponent);
 
-	// Set up inital values that can be modified by the Designer.
-	MinZoomInLength = 200.0f;
-	MaxZoomOutLength = 1000.0f;
-	ZoomInSpeed = 93.0f;
-	MaxChargePossibleAtFullChargeUp = 2.0f;
-	TimeNeededToReachFullChargeUp = 1.0f;
-	CurrentStateOfBall = Idle;
-	MaxNumberOfShotsAllowedInTheAir = 1;
-	NumberOfAirShotsTaken = 0;
-	MaxDistanceOffGroundConsideredAir = 100.0f;
-	Squishiness = 0.11f;
-	MaxParAllowed = 20;
-
-	// Generate Spheres
+	// Generate Spheres that are used for Collision Detection
 	GenerateSphere(1, sphere1, "sphere1", FVector(0.0, 58.0, 0.0));
 	GenerateSphere(2, sphere2, "sphere2", FVector(0.0, -58.0, 0.0));
 	GenerateSphere(3, sphere3, "sphere3", FVector(43.0, -25.0, 30.0));
@@ -85,7 +75,19 @@ ABall::ABall()
 	GenerateSphere(11, sphere11, "sphere11", FVector(-12.0, -25.0, -48.0));
 	GenerateSphere(12, sphere12, "sphere12", FVector(37.0, -25.0, -30.0));
 
-	// Update all Components based on their inital values.
+	// Set up inital values that can be modified by the Designer.
+	MinZoomInLength = 200.0f;	// The Min Zoom Out Distance of the Camera
+	MaxZoomOutLength = 1000.0f;	// The Max Zoom Out Distance of the Camera
+	ZoomInSpeed = 93.0f;	// The Speed at which the Camera can Zoom in and Out
+	MaxChargePossibleAtFullChargeUp = 2.0f;		// The Maximum Charge the Ball can Reach
+	TimeNeededToReachFullChargeUp = 1.0f;		// The Time Needed to Reach Full Charge Up
+	CurrentStateOfBall = Idle;		// The Current State of the User's Interaction with UltraBall
+	MaxNumberOfShotsAllowedInTheAir = 1;		// The Maximum Amount of Shots the Player is allowed to take in the Air
+	MaxDistanceOffGroundConsideredAir = 100.0f;	// The Maximum Distance that is considered Off the Ground
+	Squishiness = 0.11f;	// How Squishy UltraBall is
+	MaxParAllowed = 20;		// The Maximum Allowed Par to win the Level
+
+	// Update the Camera based on their inital values.
 	UpdateComponents();
 
 	// Tell the game controller to possess this player.
@@ -108,6 +110,7 @@ void ABall::BeginPlay()
 	hasSoundPlayed = false;
 	CurrentPar = 0;
 	isGamePaused = false;
+	NumberOfAirShotsTaken = 0;
 }
 
 // Called every frame
@@ -150,7 +153,6 @@ void ABall::Tick(float DeltaTime)
 		Predictor.MaxSimTime = 1.2f;
 
 		UGameplayStatics::PredictProjectilePath(GetWorld(), Predictor, ProjectileResult);
-
 	}
 	
 	// This section checks and updates whether UltraBall is in the air.
@@ -168,23 +170,19 @@ void ABall::Tick(float DeltaTime)
 	// This section applies material changes based on the status of UltraBall.
 	MaterialTick(DeltaTime);
 
-	// DEBUG MESSAGES
-	/*GEngine->AddOnScreenDebugMessage(1, 5.f, FColor::Red, FString::Printf(TEXT("Charge CurrentCharge is %f"), CurrentCharge));
-	if (inTheAir)
-	{
-		GEngine->AddOnScreenDebugMessage(2, 5.f, FColor::Red, FString::Printf(TEXT("In the air")));
-		GEngine->AddOnScreenDebugMessage(3, 5.f, FColor::Blue, FString::Printf(TEXT("Remaining In-air Shots: %d"), MaxNumberOfShotsAllowedInTheAir - NumberOfAirShotsTaken));
-	}
-	else
-	{
-		GEngine->AddOnScreenDebugMessage(2, 5.f, FColor::Red, FString::Printf(TEXT("On the ground")));
-		GEngine->AddOnScreenDebugMessage(3, 5.f, FColor::Blue, FString::Printf(TEXT("In-air shots irrelevant")));
-	}
+	//if (GetVelocity().Size() < 100.0f)
+	//{
+	//	if (UltraBall->GetStaticMesh() != ComplexAsset)
+	//	{
+	//		UltraBall->SetStaticMesh(ComplexAsset);
+	//	}
+	//}
 
-	if (isCameraLocked)
-		GEngine->AddOnScreenDebugMessage(2, 5.f, FColor::Red, FString::Printf(TEXT("Camera is locked")));
-	else
-		GEngine->AddOnScreenDebugMessage(2, 5.f, FColor::Red, FString::Printf(TEXT("Camera is unlocked")));*/
+	if (UltraBall->GetStaticMesh() != ComplexAsset)
+	GEngine->AddOnScreenDebugMessage(2, 5.f, FColor::Red, FString::Printf(TEXT("Simple %f"), GetVelocity().Size()));
+
+	if (UltraBall->GetStaticMesh() == ComplexAsset)
+		GEngine->AddOnScreenDebugMessage(2, 5.f, FColor::Red, FString::Printf(TEXT("Complex %f"), GetVelocity().Size()));
 
 }
 
@@ -237,6 +235,8 @@ void ABall::EndFire()
 	// If the ball is charging then fire the ball.
 	if (CurrentStateOfBall == Charging)
 	{
+		UltraBall->SetStaticMesh(SimpleAsset);
+
 		FVector offset;
 		if (isCameraLocked)
 			offset = UltraBall->GetComponentLocation() - Camera->GetComponentLocation();
@@ -263,6 +263,7 @@ void ABall::EndFire()
 
 void ABall::CancelFire()
 {
+
 	if (CurrentStateOfBall != Idle)
 	{
 		CurrentStateOfBall = Idle;
@@ -490,8 +491,9 @@ void ABall::MaterialTick(float DeltaTime)
 	UltraBall->SetScalarParameterValueOnMaterials("BurnOut", inTheAirBurnOut);
 
 	// Power: This section determines how red to make UltraBall if it's charging.
-	Pointlight->SetIntensity(((1.0f / MaxChargePossibleAtFullChargeUp) * CurrentCharge) * 9000.0f);
-	UltraBall->SetScalarParameterValueOnMaterials("Power", (1.0f / MaxChargePossibleAtFullChargeUp) * CurrentCharge);
+	float PowerAmount = (1.0f / MaxChargePossibleAtFullChargeUp) * CurrentCharge;
+	Pointlight->SetIntensity(PowerAmount * 9000.0f);
+	UltraBall->SetScalarParameterValueOnMaterials("Power", PowerAmount);
 
 	// Alpha: This section determines how transparent to make UltraBall if the camera is too close.
 	FVector distance = Camera->GetComponentLocation() - GetActorLocation();

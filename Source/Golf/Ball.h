@@ -26,6 +26,12 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	UPROPERTY(VisibleAnywhere)
+	UStaticMesh* SimpleAsset;
+	
+	UPROPERTY(VisibleAnywhere)
+	UStaticMesh* ComplexAsset;
+
 	// Visible Components
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* UltraBall;
