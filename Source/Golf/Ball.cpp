@@ -32,6 +32,7 @@ ABall::ABall()
 	UltraBall->SetSimulatePhysics(true);
 	UltraBall->SetNotifyRigidBodyCollision(true);
 	UltraBall->OnComponentHit.AddDynamic(this, &ABall::OnHit);
+	UltraBall->SetAngularDamping(2.0f);
 	RootComponent = UltraBall;
 
 	// Apply Dynamic Material to UltraBall
@@ -111,12 +112,16 @@ void ABall::BeginPlay()
 	CurrentPar = 0;
 	isGamePaused = false;
 	NumberOfAirShotsTaken = 0;
+	TimeSinceMeshChange = 0.0f;
 }
 
 // Called every frame
 void ABall::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	if (TimeSinceMeshChange < 100.0f)
+		TimeSinceMeshChange += DeltaTime;
 
 	// This section charges the CurrentCharge of the ball if the Left Mouse button is down.
 	if (CurrentStateOfBall == Charging)
@@ -170,15 +175,40 @@ void ABall::Tick(float DeltaTime)
 	// This section applies material changes based on the status of UltraBall.
 	MaterialTick(DeltaTime);
 
-	//if (GetVelocity().Size() < 100.0f)
-	//{
-	//	if (UltraBall->GetStaticMesh() != ComplexAsset)
-	//	{
-	//		UltraBall->SetStaticMesh(ComplexAsset);
-	//	}
-	//}
+	if (TimeSinceMeshChange > 1.0f)
+	{
+		if (UltraBall->GetPhysicsLinearVelocity().Size() > 300.0f)
+		{
 
-	if (UltraBall->GetStaticMesh() != ComplexAsset)
+			if (UltraBall->GetStaticMesh() != SimpleAsset)
+			{
+			
+				FVector LinearVelocity = UltraBall->GetPhysicsLinearVelocity();
+				FVector AngularVelocity = UltraBall->GetPhysicsAngularVelocity();
+
+				UltraBall->SetStaticMesh(SimpleAsset);
+
+				UltraBall->SetPhysicsLinearVelocity(LinearVelocity);
+				UltraBall->SetPhysicsAngularVelocity(AngularVelocity);
+			}
+		}
+		else
+		{
+			if (UltraBall->GetStaticMesh() != ComplexAsset)
+			{
+			
+				FVector LinearVelocity = UltraBall->GetPhysicsLinearVelocity();
+				FVector AngularVelocity = UltraBall->GetPhysicsAngularVelocity();
+
+				UltraBall->SetStaticMesh(ComplexAsset);
+
+				UltraBall->SetPhysicsLinearVelocity(LinearVelocity);
+				UltraBall->SetPhysicsAngularVelocity(AngularVelocity);
+			}
+		}
+	}
+
+	if (UltraBall->GetStaticMesh() == SimpleAsset)
 	GEngine->AddOnScreenDebugMessage(2, 5.f, FColor::Red, FString::Printf(TEXT("Simple %f"), GetVelocity().Size()));
 
 	if (UltraBall->GetStaticMesh() == ComplexAsset)
@@ -236,6 +266,7 @@ void ABall::EndFire()
 	if (CurrentStateOfBall == Charging)
 	{
 		UltraBall->SetStaticMesh(SimpleAsset);
+		TimeSinceMeshChange = 0.0f;
 
 		FVector offset;
 		if (isCameraLocked)

@@ -173,7 +173,8 @@ private:
 	float						CameraZoomAmountLock;
 	FRotator					CameraAngleLock;
 	FVector						CameraLocationLock;
-	bool isGamePaused;
+	bool						isGamePaused;
+	float						TimeSinceMeshChange;
 
 	FHitResult Result;
 	FVector Start;
