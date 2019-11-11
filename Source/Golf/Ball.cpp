@@ -177,7 +177,7 @@ void ABall::Tick(float DeltaTime)
 	// This section applies material changes based on the status of UltraBall.
 	MaterialTick(DeltaTime);
 
-	if (TimeSinceMeshChange > 1.0f)
+	if (TimeSinceMeshChange > 1.0f && UltraBall->IsGravityEnabled())
 	{
 		if (UltraBall->GetPhysicsLinearVelocity().Size() >= SpeedAtWhichMeshTransitionsBackToComplex)
 		{
@@ -454,6 +454,7 @@ void ABall::ZoneTick()
 				UltraBall->AddImpulse(offset);
 				UltraBall->SetEnableGravity(true);
 				UltraBall->SetAllPhysicsAngularVelocity(AngularVelocity, false);
+				TimeSinceMeshChange = 0.0f;
 			}
 		}
 	}

@@ -2,6 +2,7 @@
 
 #include "InformationZone.h"
 #include "Components/BoxComponent.h"
+#include "Blueprint/UserWidget.h" 
 #include "Ball.h"
 
 // Sets default values
