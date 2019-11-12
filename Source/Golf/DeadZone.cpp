@@ -67,9 +67,13 @@ void ADeadZone::OnOverlapBegin(UPrimitiveComponent * OverlappedComp, AActor * Ot
 	if ((OtherActor != nullptr) && (OtherActor != this) && (OtherComp != nullptr))
 	{
 		ABall* ball = Cast<ABall>(OtherActor);
-		ball->ZoneEnter(GetActorLocation(), FVector(0.0f), 0.0f, 0);
 
-		if (ball != nullptr && Sound != nullptr)
+		if (ball != nullptr)
+		{
+			ball->ZoneEnter(0, GetActorLocation(), FVector(0.0f), 0);
+		}
+
+		if (Sound != nullptr)
 		{
 			if (!Sound->IsPlaying())
 				Sound->Play(0.0f);

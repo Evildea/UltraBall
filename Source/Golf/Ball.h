@@ -89,13 +89,13 @@ public:
 	void Pause();
 
 	UFUNCTION()
-	void ZoneEnter(FVector a_zoneLocation, FVector a_ZonelaunchDirection, float a_zonePower, int a_zoneType);
-
-	UFUNCTION()
-	void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+	void ZoneEnter(int ZoneType, FVector CenterOfGravity, FVector LaunchDirection, float LaunchPower);
 
 	UFUNCTION()
 	void BumperHit();
+
+	UFUNCTION()
+	void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
 	// Designer Functionality
 	UPROPERTY(EditAnywhere, Category = "Designer", meta = (ClampMin = "100.0", ClampMax = "10000.0", UIMin = "100.0", UIMax = "10000.0"))
@@ -122,83 +122,53 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Designer")
 	int MaxNumberOfShotsAllowedInTheAir;
 
-	UPROPERTY(EditAnywhere, Category = "Designer", meta = (ClampMin = "0.10", ClampMax = "0.30", UIMin = "0.10", UIMax = "0.30"))
-	float Squishiness;
-
 	UPROPERTY(EditAnywhere, Category = "Designer")
 	int MaxParAllowed;
 
-	// Sphere Coliders
-	UPROPERTY(EditAnywhere)
-	USphereComponent* sphere1;
-	UPROPERTY(EditAnywhere)
-	USphereComponent* sphere2;
-	UPROPERTY(EditAnywhere)
-	USphereComponent* sphere3;
-	UPROPERTY(EditAnywhere)
-	USphereComponent* sphere4;
-	UPROPERTY(EditAnywhere)
-	USphereComponent* sphere5;
-	UPROPERTY(EditAnywhere)
-	USphereComponent* sphere6;
-	UPROPERTY(EditAnywhere)
-	USphereComponent* sphere7;
-	UPROPERTY(EditAnywhere)
-	USphereComponent* sphere8;
-	UPROPERTY(EditAnywhere)
-	USphereComponent* sphere9;
-	UPROPERTY(EditAnywhere)
-	USphereComponent* sphere10;
-	UPROPERTY(EditAnywhere)
-	USphereComponent* sphere11;
-	UPROPERTY(EditAnywhere)
-	USphereComponent* sphere12;
+	UPROPERTY(EditAnywhere, Category = "Designer")
+	bool IsInDebugMode;
 
 private:
 
-	enum BallState {Idle, Charging};
-	enum LauncherType {DeadZone, LaunchZone};
+	enum FireStates {Idle, Charging};
+	enum ChargeStates {HaveCharges, HaveNoCharges};
+	enum LocationStates {OnTheGround, InTheAir};
+	enum ZoneStates {InDeadZone, InLaunchZone, InNoZone};
 
-	BallState					CurrentStateOfBall;
-	LauncherType				CurrentLauncherType;
-	float						CurrentLauncherPower;
-	int							CurrentSideOfBallDown;
-	FVector						LocationOfGravityFreeze;
-	FVector						LocationOfLauncherDirection;
-	float						CurrentZoomAmount;
-	float						CurrentCharge;
-	float						ChargeUpTimePassed;
-	int							NumberOfAirShotsTaken;
-	bool						inTheAir;
-	bool						hasSoundPlayed;
-	bool						isInCentreOfGravityFreeze;
-	float						inTheAirBurnOut;
-	USphereComponent*			CurrentSideOfBallDownList[12];
-	int							CurrentPar;
-	bool						isCameraLocked;
-	float						CameraZoomAmountLock;
-	FRotator					CameraAngleLock;
-	FVector						CameraLocationLock;
-	bool						isGamePaused;
-	float						TimeSinceMeshChange;
+	FireStates CurrentFireState;
+	ChargeStates CurrentChargeState;
+	LocationStates CurrentLocationState;
+	ZoneStates CurrentZoneState;
 
-	FHitResult Result;
-	FVector Start;
-	FVector End;
-	ECollisionChannel CollisionChannel;
-	FVector AngularVelocity;
+	float CurrentZoomAmount;
+	float CurrentChargeUpTimePassed;
+	float CurrentCharge;
+	float inAirBlackenAmount;
+	float TimeSinceMeshChange;
+	float TimeSinceLastInZone;
+	bool StartTimerSinceLastInZone;
+
+	int CurrentPar;
+	int CurrentShotsTakenInTheAir;
+
+	bool isGamePaused;
+
+	FVector CenterOfGravity;
+	FVector LaunchDirection;
+	float LaunchPower;
 
 	// Forces the components such as the arrow and spring arm to update
 	void UpdateComponents();
 
-	void GenerateSphere(int a_number, class USphereComponent* &a_sphere, FName a_name, FVector a_location);
-	void GetSideFacing(int a_side);
-	float ClampIt(float X1, float X2, float DeltaTime);
-
-	void ZoneTick();
-	void SquishTick(float DeltaTime);
+	void ZoneTick(float DeltaTime);
 	void MaterialTick(float DeltaTime);
-	void inTheAirCheckTick();
-	void ChargesRemainingCheckTick(float DeltaTime);
+	void LocationTick();
+	void DebugTick();
+	void MeshChangeTick(float DeltaTime);
+	float SnapToCenterOfGravityTick();
+
+
+	void ResetChargeState();
+	void SetMesh(UStaticMesh* MeshToUse);
 
 };
