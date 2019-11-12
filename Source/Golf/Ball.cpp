@@ -119,9 +119,7 @@ void ABall::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	// Countdown the timer set if the user attempts to fire when they're out of charges. This is used by the HUDWidget.
-	TimeSinceAttemptedFire -= (TimeSinceAttemptedFire != 0.0f) ? (TimeSinceAttemptedFire -= DeltaTime) : TimeSinceAttemptedFire = 0.0f;
-	if (TimeSinceAttemptedFire < 0.0f)
-		TimeSinceAttemptedFire = 0.0f;
+	TimeSinceAttemptedFire = (TimeSinceAttemptedFire > 0.0f) ? TimeSinceAttemptedFire - DeltaTime : 0.0f;
 
 	// Update for CHARGING STATE
 	if (CurrentFireState == Charging)
@@ -130,9 +128,7 @@ void ABall::Tick(float DeltaTime)
 		CurrentChargeUpTimePassed += DeltaTime;
 
 		// Calculate the current amount of charge to be applied to UltraBall.
-		CurrentCharge = (MaxChargePossibleAtFullChargeUp / TimeNeededToReachFullChargeUp) * CurrentChargeUpTimePassed;
-		if (CurrentCharge > MaxChargePossibleAtFullChargeUp)
-			CurrentCharge = MaxChargePossibleAtFullChargeUp;
+		CurrentCharge = (CurrentCharge < MaxChargePossibleAtFullChargeUp) ? ((MaxChargePossibleAtFullChargeUp / TimeNeededToReachFullChargeUp) * CurrentChargeUpTimePassed) : MaxChargePossibleAtFullChargeUp;
 	
 		//This section predicts what direction the shot will go.
 		FVector offset;
@@ -318,11 +314,8 @@ FString ABall::GetParString()
 
 float ABall::GetCharge()
 {
-	float Charge;
-	Charge = (1.0f / TimeNeededToReachFullChargeUp) * CurrentChargeUpTimePassed;
-	if (Charge > 1.0f)
-		Charge = 1.0f;
-	return Charge;
+	float Calculation = (1.0f / TimeNeededToReachFullChargeUp) * CurrentChargeUpTimePassed;
+	return (Calculation < 1.0f) ? Calculation : 1.0f;
 }
 
 bool ABall::GetBurnedOutStatus()
