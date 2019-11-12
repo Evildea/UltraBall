@@ -148,6 +148,11 @@ private:
 	float TimeSinceLastInZone;
 	bool StartTimerSinceLastInZone;
 
+	bool isCameraLocked;
+	float CameraZoomAmountLock;
+	FVector CameraLocationLock;
+	FRotator CameraAngleLock;
+
 	int CurrentPar;
 	int CurrentShotsTakenInTheAir;
 

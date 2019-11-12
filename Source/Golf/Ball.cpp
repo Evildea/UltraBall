@@ -12,6 +12,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Components/AudioComponent.h"
 #include "PhysicsEngine/BodySetup.h"
+#include "PhysicalMaterials/PhysicalMaterial.h" 
 
 ABall::ABall()
 {
@@ -39,6 +40,11 @@ ABall::ABall()
 	static ConstructorHelpers::FObjectFinder<UMaterialInstance> Material(TEXT("MaterialInstanceConstant'/Game/Materials/UltraBall_MI.UltraBall_MI'"));
 	if (Material.Succeeded())
 		UltraBall->SetMaterial(0, Material.Object);
+
+	// Apply Physics Material to UltraBall
+	static ConstructorHelpers::FObjectFinder<UPhysicalMaterial> PhysicsMaterial(TEXT("PhysicalMaterial'/Game/Materials/UltraBallPhysics.UltraBallPhysics'"));
+	if (PhysicsMaterial.Succeeded())
+		UltraBall->SetPhysMaterialOverride(PhysicsMaterial.Object);
 
 	// Setup Sound Component
 	Sound = CreateDefaultSubobject<UAudioComponent>("Sound");
@@ -71,6 +77,7 @@ ABall::ABall()
 	MaxNumberOfShotsAllowedInTheAir = 1;		// The Maximum Amount of Shots the Player is allowed to take in the Air
 	SpeedAtWhichMeshTransitionsBackToComplex = 300.0f;
 	MaxParAllowed = 20;		// The Maximum Allowed Par to win the Level
+	MaxDistanceOffGroundConsideredAir = 100.0f;
 	IsInDebugMode = false;
 
 	// Update the Camera based on their inital values.
@@ -99,6 +106,8 @@ void ABall::BeginPlay()
 	TimeSinceMeshChange = 0.0f;
 	TimeSinceLastInZone = 0.0f;
 	StartTimerSinceLastInZone = false;
+	isCameraLocked = false;
+	CameraZoomAmountLock = 0.0f;
 
 	CurrentShotsTakenInTheAir = 0;
 
@@ -120,6 +129,39 @@ void ABall::Tick(float DeltaTime)
 		CurrentCharge = (MaxChargePossibleAtFullChargeUp / TimeNeededToReachFullChargeUp) * CurrentChargeUpTimePassed;
 		if (CurrentCharge > MaxChargePossibleAtFullChargeUp)
 			CurrentCharge = MaxChargePossibleAtFullChargeUp;
+	
+	
+
+		//This section predicts what direction the shot will go.
+		//FVector offset;
+		//if (isCameraLocked)
+		//	offset = UltraBall->GetComponentLocation() - Camera->GetComponentLocation();
+		//else
+		//	offset = UltraBall->GetComponentLocation() - CameraLocationLock;
+
+
+		//offset = offset.GetSafeNormal(1.0f) * UltraBall->GetMass() * CurrentCharge * 12.5f;
+		//FPredictProjectilePathParams Predictor;
+		//FPredictProjectilePathResult ProjectileResult;
+		//ECollisionChannel CollisionChannel = ECC_Visibility;
+
+		//Predictor.StartLocation = GetActorLocation();
+		//Predictor.LaunchVelocity = offset;
+		//Predictor.bTraceComplex = true;
+		//Predictor.ProjectileRadius = 30.0f;
+		//Predictor.TraceChannel = CollisionChannel;
+
+		//TArray<AActor*> ActorsToIgnore;
+		//ActorsToIgnore.Add(this);
+
+		//Predictor.ActorsToIgnore = ActorsToIgnore;
+		//Predictor.DrawDebugType = EDrawDebugTrace::ForOneFrame;
+		//Predictor.SimFrequency = 10.0f;
+		//Predictor.MaxSimTime = 1.2f;
+
+		//UGameplayStatics::PredictProjectilePath(GetWorld(), Predictor, ProjectileResult);
+
+	
 	}
 
 	// Change to a Sphere Mesh Colider if UltraBall is moving fast and a Dodecahedron Mesh Colider if it's moving slow.
@@ -295,17 +337,15 @@ void ABall::LookLeft(float value)
 
 void ABall::CameraLock()
 {
-	//isCameraLocked = true;
-	//CurrentZoomAmount = CameraZoomAmountLock;
-	//SpringArm->SetRelativeRotation(CameraAngleLock);
+	isCameraLocked = true;
+	SpringArm->SetRelativeRotation(CameraAngleLock);
 }
 
 void ABall::CameraUnLock()
 {
-	//isCameraLocked = false;
-	//CameraZoomAmountLock = CurrentZoomAmount;
-	//CameraAngleLock = SpringArm->GetComponentRotation();
-	//CameraLocationLock = Camera->GetComponentLocation();
+	isCameraLocked = false;
+	CameraAngleLock = SpringArm->GetComponentRotation();
+	CameraLocationLock = Camera->GetComponentLocation();
 }
 
 FString ABall::GetParString()
