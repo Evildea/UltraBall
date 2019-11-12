@@ -42,9 +42,7 @@ ABumper::ABumper()
 
 	static ConstructorHelpers::FObjectFinder<UAnimMontage> AnimationObj(TEXT("AnimMontage'/Game/Models/M_Bumper45_Montage.M_Bumper45_Montage'"));
 	if (AnimationObj.Succeeded())
-	{
 		Animation = AnimationObj.Object;
-	}
 
 	BouncePower = 2.0f;
 
@@ -79,6 +77,7 @@ void ABumper::OnOverlapBegin(UPrimitiveComponent * OverlappedComp, AActor * Othe
 		{
 			if (!Sound->IsPlaying())
 				Sound->Play(0.0f);
+			ball->BumperHit();
 		}
 	}
 

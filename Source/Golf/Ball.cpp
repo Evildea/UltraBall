@@ -380,6 +380,11 @@ void ABall::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveCo
 	}
 }
 
+void ABall::BumperHit()
+{
+	TimeSinceMeshChange = 0.0f;
+}
+
 void ABall::UpdateComponents()
 {
 	if (CurrentZoomAmount < MinZoomInLength) { CurrentZoomAmount = MinZoomInLength; }
@@ -395,6 +400,7 @@ void ABall::GenerateSphere(int a_number, USphereComponent * &a_sphere, FName a_n
 	a_sphere->SetupAttachment(RootComponent);
 	a_sphere->SetSimulatePhysics(false);
 	a_sphere->SetEnableGravity(false);
+	a_sphere->SetCollisionProfileName(FName("NoCollision"));
 
 	CurrentSideOfBallDownList[a_number] = a_sphere;
 }
