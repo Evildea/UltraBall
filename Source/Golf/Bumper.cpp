@@ -67,18 +67,22 @@ void ABumper::OnOverlapBegin(UPrimitiveComponent * OverlappedComp, AActor * Othe
 	// Other Actor is the actor that triggered the event. Check that is not ourself.  
 	if ((OtherActor != nullptr) && (OtherActor != this) && (OtherComp != nullptr))
 	{
-		OtherComp->SetPhysicsLinearVelocity(FVector(0.0f, 0.0f, 0.0f));
-		OtherComp->AddImpulse(Bumper->GetForwardVector() * OtherComp->GetMass() * BouncePower * 1000.0f);
 		ABall* ball = Cast<ABall>(OtherActor);
 
-		Bumper->PlayAnimation(Animation, false);
+		if (ball != nullptr)
+		{
+			OtherComp->SetPhysicsLinearVelocity(FVector(0.0f, 0.0f, 0.0f));
+			OtherComp->AddImpulse(Bumper->GetForwardVector() * OtherComp->GetMass() * BouncePower * 1000.0f);
+			ball->BumperHit();
+		}
 
-		if (ball != nullptr && Sound != nullptr)
+		if (Sound != nullptr)
 		{
 			if (!Sound->IsPlaying())
 				Sound->Play(0.0f);
-			ball->BumperHit();
 		}
+
+		Bumper->PlayAnimation(Animation, false);
 	}
 
 }
