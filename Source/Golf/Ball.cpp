@@ -42,9 +42,9 @@ ABall::ABall()
 		UltraBall->SetMaterial(0, Material.Object);
 
 	// Apply Physics Material to UltraBall
-	static ConstructorHelpers::FObjectFinder<UPhysicalMaterial> PhysicsMaterial(TEXT("PhysicalMaterial'/Game/Materials/UltraBallPhysics.UltraBallPhysics'"));
-	if (PhysicsMaterial.Succeeded())
-		UltraBall->SetPhysMaterialOverride(PhysicsMaterial.Object);
+	//static ConstructorHelpers::FObjectFinder<UPhysicalMaterial> PhysicsMaterial(TEXT("PhysicalMaterial'/Game/Materials/UltraBallPhysics.UltraBallPhysics'"));
+	//if (PhysicsMaterial.Succeeded())
+	//	UltraBall->SetPhysMaterialOverride(PhysicsMaterial.Object);
 
 	// Setup Sound Component
 	Sound = CreateDefaultSubobject<UAudioComponent>("Sound");
