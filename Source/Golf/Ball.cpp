@@ -97,7 +97,6 @@ void ABall::BeginPlay()
 	CurrentChargeState = HaveCharges;
 	CurrentLocationState = OnTheGround;
 	CurrentZoneState = InNoZone;
-
 	CurrentChargeUpTimePassed = 0.0f;
 	CurrentZoomAmount = 0.0f;
 	CurrentPar = 0;
@@ -157,7 +156,6 @@ void ABall::Tick(float DeltaTime)
 		Predictor.MaxSimTime = 1.2f;
 
 		UGameplayStatics::PredictProjectilePath(GetWorld(), Predictor, ProjectileResult);
-
 	
 	}
 
@@ -307,6 +305,15 @@ void ABall::CameraUnLock()
 FString ABall::GetParString()
 {
 	return FString::Printf(TEXT("Par: %d/%d"), CurrentPar, MaxParAllowed);
+}
+
+float ABall::GetCharge()
+{
+	float Charge;
+	Charge = (1.0f / TimeNeededToReachFullChargeUp) * CurrentChargeUpTimePassed;
+	if (Charge > 1.0f)
+		Charge = 1.0f;
+	return Charge;
 }
 
 void ABall::Pause()
