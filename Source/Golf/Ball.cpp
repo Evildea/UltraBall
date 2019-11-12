@@ -130,36 +130,33 @@ void ABall::Tick(float DeltaTime)
 		if (CurrentCharge > MaxChargePossibleAtFullChargeUp)
 			CurrentCharge = MaxChargePossibleAtFullChargeUp;
 	
-	
-
 		//This section predicts what direction the shot will go.
-		//FVector offset;
-		//if (isCameraLocked)
-		//	offset = UltraBall->GetComponentLocation() - Camera->GetComponentLocation();
-		//else
-		//	offset = UltraBall->GetComponentLocation() - CameraLocationLock;
+		FVector offset;
+		if (isCameraLocked)
+			offset = GetActorLocation() - CameraLocationLock;
+		else
+			offset = GetActorLocation() - Camera->GetComponentLocation();
 
+		offset = offset.GetSafeNormal(1.0f) * UltraBall->GetMass() * CurrentCharge * 12.5f;
+		FPredictProjectilePathParams Predictor;
+		FPredictProjectilePathResult ProjectileResult;
+		ECollisionChannel CollisionChannel = ECC_Visibility;
 
-		//offset = offset.GetSafeNormal(1.0f) * UltraBall->GetMass() * CurrentCharge * 12.5f;
-		//FPredictProjectilePathParams Predictor;
-		//FPredictProjectilePathResult ProjectileResult;
-		//ECollisionChannel CollisionChannel = ECC_Visibility;
+		Predictor.StartLocation = GetActorLocation();
+		Predictor.LaunchVelocity = offset;
+		Predictor.bTraceComplex = true;
+		Predictor.ProjectileRadius = 30.0f;
+		Predictor.TraceChannel = CollisionChannel;
 
-		//Predictor.StartLocation = GetActorLocation();
-		//Predictor.LaunchVelocity = offset;
-		//Predictor.bTraceComplex = true;
-		//Predictor.ProjectileRadius = 30.0f;
-		//Predictor.TraceChannel = CollisionChannel;
+		TArray<AActor*> ActorsToIgnore;
+		ActorsToIgnore.Add(this);
 
-		//TArray<AActor*> ActorsToIgnore;
-		//ActorsToIgnore.Add(this);
+		Predictor.ActorsToIgnore = ActorsToIgnore;
+		Predictor.DrawDebugType = EDrawDebugTrace::ForOneFrame;
+		Predictor.SimFrequency = 10.0f;
+		Predictor.MaxSimTime = 1.2f;
 
-		//Predictor.ActorsToIgnore = ActorsToIgnore;
-		//Predictor.DrawDebugType = EDrawDebugTrace::ForOneFrame;
-		//Predictor.SimFrequency = 10.0f;
-		//Predictor.MaxSimTime = 1.2f;
-
-		//UGameplayStatics::PredictProjectilePath(GetWorld(), Predictor, ProjectileResult);
+		UGameplayStatics::PredictProjectilePath(GetWorld(), Predictor, ProjectileResult);
 
 	
 	}
@@ -179,52 +176,6 @@ void ABall::Tick(float DeltaTime)
 	// Update Debug
 	DebugTick();
 
-
-
-
-
-
-	
-	//// This section charges the CurrentCharge of the ball if the Left Mouse button is down.
-	//if (CurrentStateOfBall == Charging)
-	//{
-	//	// Charge up the CurrentCharge.
-	//	ChargeUpTimePassed += DeltaTime;
-	//	CurrentCharge = (MaxChargePossibleAtFullChargeUp / TimeNeededToReachFullChargeUp) * ChargeUpTimePassed;
-	//	if (CurrentCharge > MaxChargePossibleAtFullChargeUp)
-	//		CurrentCharge = MaxChargePossibleAtFullChargeUp;
-
-	//	//This section predicts what direction the shot will go.
-	//	FVector offset;
-	//	if (isCameraLocked)
-	//		offset = UltraBall->GetComponentLocation() - Camera->GetComponentLocation();
-	//	else
-	//		offset = UltraBall->GetComponentLocation() - CameraLocationLock;
-
-	//	offset = offset.GetSafeNormal(1.0f) * UltraBall->GetMass() * CurrentCharge * 12.5f;
-	//	FPredictProjectilePathParams Predictor;
-	//	FPredictProjectilePathResult ProjectileResult;
-
-	//	Predictor.StartLocation = GetActorLocation();
-	//	Predictor.LaunchVelocity = offset;
-	//	Predictor.bTraceComplex = true;
-	//	Predictor.ProjectileRadius = 30.0f;
-	//	Predictor.TraceChannel = CollisionChannel;
-
-	//	TArray<AActor*> ActorsToIgnore;
-	//	ActorsToIgnore.Add(this);
-
-	//	Predictor.ActorsToIgnore = ActorsToIgnore;
-	//	Predictor.DrawDebugType = EDrawDebugTrace::ForOneFrame;
-	//	Predictor.SimFrequency = 10.0f;
-	//	Predictor.MaxSimTime = 1.2f;
-
-	//	UGameplayStatics::PredictProjectilePath(GetWorld(), Predictor, ProjectileResult);
-	//}
-
-	//// This section checks whether the UltraBall is inside a DeadZone or LaunchZone.
-	//ZoneTick();
-
 }
 
 // Called to bind functionality to input
@@ -240,8 +191,8 @@ void ABall::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	PlayerInputComponent->BindAxis("LookLeft", this, &ABall::LookLeft);
 	PlayerInputComponent->BindAction("ZoomIn", IE_Pressed, this, &ABall::ZoomIn);
 	PlayerInputComponent->BindAction("ZoomOut", IE_Pressed, this, &ABall::ZoomOut);
-	PlayerInputComponent->BindAction("CameraLock", IE_Pressed, this, &ABall::CameraUnLock);
-	PlayerInputComponent->BindAction("CameraLock", IE_Released, this, &ABall::CameraLock);
+	PlayerInputComponent->BindAction("CameraLock", IE_Pressed, this, &ABall::CameraLock);
+	PlayerInputComponent->BindAction("CameraLock", IE_Released, this, &ABall::CameraUnLock);
 	PlayerInputComponent->BindAction("Pause", IE_Pressed, this, &ABall::Pause);
 
 }
@@ -284,7 +235,12 @@ void ABall::EndFire()
 		UltraBall->SetStaticMesh(SimpleAsset);
 
 		// Calculate the launch direction for UltraBall.
-		FVector LaunchDirection = UltraBall->GetComponentLocation() - Camera->GetComponentLocation();
+		FVector LaunchDirection;
+		if (isCameraLocked)
+			LaunchDirection = UltraBall->GetComponentLocation() - CameraLocationLock;
+		else
+			LaunchDirection = UltraBall->GetComponentLocation() - Camera->GetComponentLocation();
+
 		LaunchDirection = LaunchDirection.GetSafeNormal(1.0f) * UltraBall->GetMass() * CurrentCharge * 1000.0f;
 		UltraBall->SetPhysicsLinearVelocity(FVector(0.0f, 0.0f, 0.0f));
 		UltraBall->AddImpulse(LaunchDirection);
@@ -338,14 +294,14 @@ void ABall::LookLeft(float value)
 void ABall::CameraLock()
 {
 	isCameraLocked = true;
-	SpringArm->SetRelativeRotation(CameraAngleLock);
+	CameraAngleLock = SpringArm->GetComponentRotation();
+	CameraLocationLock = Camera->GetComponentLocation();
 }
 
 void ABall::CameraUnLock()
 {
 	isCameraLocked = false;
-	CameraAngleLock = SpringArm->GetComponentRotation();
-	CameraLocationLock = Camera->GetComponentLocation();
+	SpringArm->SetRelativeRotation(CameraAngleLock);
 }
 
 FString ABall::GetParString()
