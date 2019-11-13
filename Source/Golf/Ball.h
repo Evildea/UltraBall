@@ -48,6 +48,28 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Designer")
 	class UAudioComponent* Sound;
 
+	// Predictor Paths
+	UPROPERTY(VisibleAnywhere)
+	UStaticMeshComponent* PredictorRing01;
+
+	UPROPERTY(VisibleAnywhere)
+	UStaticMeshComponent* PredictorRing02;
+
+	UPROPERTY(VisibleAnywhere)
+	UStaticMeshComponent* PredictorRing03;
+
+	UPROPERTY(VisibleAnywhere)
+	UStaticMeshComponent* PredictorRing04;
+
+	UPROPERTY(VisibleAnywhere)
+	UStaticMeshComponent* PredictorRing05;
+
+	UPROPERTY(VisibleAnywhere)
+	UStaticMeshComponent* PredictorRing06;
+
+	UPROPERTY()
+	TArray<UStaticMeshComponent*> PredictorArray;
+
 	// Callable functions
 	UFUNCTION(BlueprintCallable)
 	bool getGamePauseState() { return isGamePaused; }
@@ -186,5 +208,7 @@ private:
 
 	void ResetChargeState();
 	void SetMesh(UStaticMesh* MeshToUse);
+	void SetupRing(UStaticMeshComponent *Mesh);
+	void SetRing(UStaticMeshComponent *Mesh, FVector Location);
 
 };
