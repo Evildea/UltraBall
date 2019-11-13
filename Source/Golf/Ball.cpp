@@ -29,7 +29,6 @@ ABall::ABall()
 	ComplexAsset = UltraBallComplex.Object;
 
 	UltraBall->SetStaticMesh(ComplexAsset);
-
 	UltraBall->SetSimulatePhysics(true);
 	UltraBall->SetNotifyRigidBodyCollision(true);
 	UltraBall->OnComponentHit.AddDynamic(this, &ABall::OnHit);
@@ -40,6 +39,31 @@ ABall::ABall()
 	ConstructorHelpers::FObjectFinder<UMaterialInstance> Material(TEXT("MaterialInstanceConstant'/Game/Materials/UltraBall_MI.UltraBall_MI'"));
 	if (Material.Succeeded())
 		UltraBall->SetMaterial(0, Material.Object);
+
+	// Setup the predictor rings
+	PredictorRing01 = CreateDefaultSubobject<UStaticMeshComponent>("PredictorRing01");
+	SetupRing(PredictorRing01);
+	PredictorArray.Add(PredictorRing01);
+
+	PredictorRing02 = CreateDefaultSubobject<UStaticMeshComponent>("PredictorRing02");
+	SetupRing(PredictorRing02);
+	PredictorArray.Add(PredictorRing02);
+
+	PredictorRing03 = CreateDefaultSubobject<UStaticMeshComponent>("PredictorRing03");
+	SetupRing(PredictorRing03);
+	PredictorArray.Add(PredictorRing03);
+
+	PredictorRing04 = CreateDefaultSubobject<UStaticMeshComponent>("PredictorRing04");
+	SetupRing(PredictorRing04);
+	PredictorArray.Add(PredictorRing04);
+
+	PredictorRing05 = CreateDefaultSubobject<UStaticMeshComponent>("PredictorRing05");
+	SetupRing(PredictorRing05);
+	PredictorArray.Add(PredictorRing05);
+
+	PredictorRing06 = CreateDefaultSubobject<UStaticMeshComponent>("PredictorRing06");
+	SetupRing(PredictorRing06);
+	PredictorArray.Add(PredictorRing06);
 
 	// Apply Physics Material to UltraBall
 	//ConstructorHelpers::FObjectFinder<UPhysicalMaterial> PhysicsMaterial(TEXT("PhysicalMaterial'/Game/Materials/UltraBallPhysics.UltraBallPhysics'"));
@@ -122,6 +146,10 @@ void ABall::Tick(float DeltaTime)
 	// Countdown the timer set if the user attempts to fire when they're out of charges. This is used by the HUDWidget.
 	TimeSinceAttemptedFire = (TimeSinceAttemptedFire > 0.0f) ? TimeSinceAttemptedFire - DeltaTime : 0.0f;
 
+	// Hide each Predictor
+	for (int i = 0; i < PredictorArray.Num(); i++)
+		PredictorArray[i]->SetVisibility(false);
+
 	// Update for CHARGING STATE
 	if (CurrentFireState == Charging)
 	{
@@ -129,14 +157,15 @@ void ABall::Tick(float DeltaTime)
 		CurrentChargeUpTimePassed += DeltaTime;
 
 		// Calculate the current amount of charge to be applied to UltraBall.
-		//CurrentCharge = (CurrentCharge < MaxChargePossibleAtFullChargeUp) ? ((MaxChargePossibleAtFullChargeUp / TimeNeededToReachFullChargeUp) * CurrentChargeUpTimePassed) : MaxChargePossibleAtFullChargeUp;
 		float ChargeAmount = (MaxChargePossibleAtFullChargeUp / TimeNeededToReachFullChargeUp) * CurrentChargeUpTimePassed;
 
+		// Determine if the charge should iterate or decrement.
 		if (IsPowerIterating)
 			CurrentCharge = ChargeAmount;
 		else
 			CurrentCharge = MaxChargePossibleAtFullChargeUp - ChargeAmount;
 
+		// Swap between incrementing and decrementing.
 		if (IsPowerIterating && CurrentCharge >= MaxChargePossibleAtFullChargeUp)
 		{
 			CurrentCharge = MaxChargePossibleAtFullChargeUp;
@@ -150,7 +179,6 @@ void ABall::Tick(float DeltaTime)
 			CurrentChargeUpTimePassed = 0.0f;
 			IsPowerIterating = true;
 		}
-
 
 		//This section predicts what direction the shot will go.
 		FVector offset;
@@ -174,11 +202,22 @@ void ABall::Tick(float DeltaTime)
 		ActorsToIgnore.Add(this);
 
 		Predictor.ActorsToIgnore = ActorsToIgnore;
-		Predictor.DrawDebugType = EDrawDebugTrace::ForOneFrame;
-		Predictor.SimFrequency = 10.0f;
-		Predictor.MaxSimTime = 1.2f;
+		Predictor.SimFrequency = 12.0f;
+		Predictor.MaxSimTime = 2.0f;
 
+		// Project the Path
 		UGameplayStatics::PredictProjectilePath(GetWorld(), Predictor, ProjectileResult);
+
+		// Get the Location Data
+		TArray<FPredictProjectilePathPointData> Locations;
+		Locations = ProjectileResult.PathData;
+		
+		// Update Each Predictor
+		for (int i = 0; i < PredictorArray.Num(); i++)
+		{
+			SetRing(PredictorArray[i], Locations[1 + (i * 2)].Location);
+			GEngine->AddOnScreenDebugMessage(4, 5.f, FColor::Red, FString::Printf(TEXT("Last in zone: %f"), TimeSinceLastInZone));
+		}
 	
 	}
 
@@ -642,5 +681,21 @@ void ABall::SetMesh(UStaticMesh* MeshToUse)
 
 	UltraBall->SetPhysicsLinearVelocity(LinearVelocity);
 	UltraBall->SetPhysicsAngularVelocity(AngularVelocity);
+}
+
+void ABall::SetupRing(UStaticMeshComponent *Mesh)
+{
+	ConstructorHelpers::FObjectFinder<UStaticMesh> Predictor(TEXT("StaticMesh'/Game/Models/M_aim_guide.M_aim_guide'"));
+	Mesh->SetStaticMesh(Predictor.Object);
+	Mesh->SetSimulatePhysics(false);
+	Mesh->SetGenerateOverlapEvents(false);
+	Mesh->SetCanEverAffectNavigation(false);
+}
+
+void ABall::SetRing(UStaticMeshComponent *Mesh, FVector Location)
+{
+	Mesh->SetWorldLocation(Location);
+	Mesh->SetWorldRotation(SpringArm->GetComponentRotation());
+	Mesh->SetVisibility(true);
 }
 
