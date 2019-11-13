@@ -86,6 +86,9 @@ public:
 	FString GetParString();
 
 	UFUNCTION(BlueprintCallable)
+	FString GetFinishParString();
+
+	UFUNCTION(BlueprintCallable)
 	float GetCharge();
 
 	UFUNCTION(BlueprintCallable)

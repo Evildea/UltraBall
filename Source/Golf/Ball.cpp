@@ -312,6 +312,11 @@ FString ABall::GetParString()
 	return FString::Printf(TEXT("Par: %d/%d"), CurrentPar, MaxParAllowed);
 }
 
+FString ABall::GetFinishParString()
+{
+	return FString::Printf(TEXT("Completed in %d out of %d shots"), CurrentPar, MaxParAllowed);
+}
+
 float ABall::GetCharge()
 {
 	float Calculation = (1.0f / TimeNeededToReachFullChargeUp) * CurrentChargeUpTimePassed;
