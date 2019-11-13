@@ -22,8 +22,8 @@ ABall::ABall()
 	// Setup static mesh for UltraBall
 	UltraBall = CreateDefaultSubobject<UStaticMeshComponent>("UltraBall");
 
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> UltraBallSimple(TEXT("StaticMesh'/Game/Models/UltraBallS.UltraBallS'"));
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> UltraBallComplex(TEXT("StaticMesh'/Game/Models/UltraBallC.UltraBallC'"));
+	ConstructorHelpers::FObjectFinder<UStaticMesh> UltraBallSimple(TEXT("StaticMesh'/Game/Models/UltraBallS.UltraBallS'"));
+	ConstructorHelpers::FObjectFinder<UStaticMesh> UltraBallComplex(TEXT("StaticMesh'/Game/Models/UltraBallC.UltraBallC'"));
 
 	SimpleAsset = UltraBallSimple.Object;
 	ComplexAsset = UltraBallComplex.Object;
@@ -37,12 +37,12 @@ ABall::ABall()
 	RootComponent = UltraBall;
 
 	// Apply Dynamic Material to UltraBall
-	static ConstructorHelpers::FObjectFinder<UMaterialInstance> Material(TEXT("MaterialInstanceConstant'/Game/Materials/UltraBall_MI.UltraBall_MI'"));
+	ConstructorHelpers::FObjectFinder<UMaterialInstance> Material(TEXT("MaterialInstanceConstant'/Game/Materials/UltraBall_MI.UltraBall_MI'"));
 	if (Material.Succeeded())
 		UltraBall->SetMaterial(0, Material.Object);
 
 	// Apply Physics Material to UltraBall
-	//static ConstructorHelpers::FObjectFinder<UPhysicalMaterial> PhysicsMaterial(TEXT("PhysicalMaterial'/Game/Materials/UltraBallPhysics.UltraBallPhysics'"));
+	//ConstructorHelpers::FObjectFinder<UPhysicalMaterial> PhysicsMaterial(TEXT("PhysicalMaterial'/Game/Materials/UltraBallPhysics.UltraBallPhysics'"));
 	//if (PhysicsMaterial.Succeeded())
 	//	UltraBall->SetPhysMaterialOverride(PhysicsMaterial.Object);
 
@@ -107,6 +107,7 @@ void ABall::BeginPlay()
 	StartTimerSinceLastInZone = false;
 	isCameraLocked = false;
 	CameraZoomAmountLock = 0.0f;
+	IsPowerIterating = true;
 
 	CurrentShotsTakenInTheAir = 0;
 
@@ -118,6 +119,9 @@ void ABall::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	// Countdown the timer set if the user attempts to fire when they're out of charges. This is used by the HUDWidget.
+	TimeSinceAttemptedFire = (TimeSinceAttemptedFire > 0.0f) ? TimeSinceAttemptedFire - DeltaTime : 0.0f;
+
 	// Update for CHARGING STATE
 	if (CurrentFireState == Charging)
 	{
@@ -125,10 +129,29 @@ void ABall::Tick(float DeltaTime)
 		CurrentChargeUpTimePassed += DeltaTime;
 
 		// Calculate the current amount of charge to be applied to UltraBall.
-		CurrentCharge = (MaxChargePossibleAtFullChargeUp / TimeNeededToReachFullChargeUp) * CurrentChargeUpTimePassed;
-		if (CurrentCharge > MaxChargePossibleAtFullChargeUp)
+		//CurrentCharge = (CurrentCharge < MaxChargePossibleAtFullChargeUp) ? ((MaxChargePossibleAtFullChargeUp / TimeNeededToReachFullChargeUp) * CurrentChargeUpTimePassed) : MaxChargePossibleAtFullChargeUp;
+		float ChargeAmount = (MaxChargePossibleAtFullChargeUp / TimeNeededToReachFullChargeUp) * CurrentChargeUpTimePassed;
+
+		if (IsPowerIterating)
+			CurrentCharge = ChargeAmount;
+		else
+			CurrentCharge = MaxChargePossibleAtFullChargeUp - ChargeAmount;
+
+		if (IsPowerIterating && CurrentCharge >= MaxChargePossibleAtFullChargeUp)
+		{
 			CurrentCharge = MaxChargePossibleAtFullChargeUp;
-	
+			CurrentChargeUpTimePassed = 0.0f;
+			IsPowerIterating = false;
+		}
+
+		if (!IsPowerIterating && CurrentCharge < 0.0f)
+		{
+			CurrentCharge = 0.0f;
+			CurrentChargeUpTimePassed = 0.0f;
+			IsPowerIterating = true;
+		}
+
+
 		//This section predicts what direction the shot will go.
 		FVector offset;
 		if (isCameraLocked)
@@ -218,7 +241,11 @@ void ABall::Fire()
 		// Reset the Charge State.
 		ResetChargeState();
 	}
-	
+
+	// Set the timer that shows the user has attempted to fire when they're out of charges. This is used by the HUDWidget.
+	if (CurrentShotsTakenInTheAir == MaxNumberOfShotsAllowedInTheAir)
+		TimeSinceAttemptedFire = 1.0f;
+
 }
 
 void ABall::EndFire()
@@ -307,13 +334,24 @@ FString ABall::GetParString()
 	return FString::Printf(TEXT("Par: %d/%d"), CurrentPar, MaxParAllowed);
 }
 
+FString ABall::GetFinishParString()
+{
+	return FString::Printf(TEXT("Completed in %d out of %d shots"), CurrentPar, MaxParAllowed);
+}
+
 float ABall::GetCharge()
 {
-	float Charge;
-	Charge = (1.0f / TimeNeededToReachFullChargeUp) * CurrentChargeUpTimePassed;
-	if (Charge > 1.0f)
-		Charge = 1.0f;
-	return Charge;
+	float Calculation = (1.0f / TimeNeededToReachFullChargeUp) * CurrentChargeUpTimePassed;
+
+	if (IsPowerIterating)
+		return (Calculation < 1.0f) ? Calculation : 1.0f;
+	else
+		return (Calculation > 0.0f) ? 1.0f - Calculation : 1.0f;
+}
+
+bool ABall::GetBurnedOutStatus()
+{
+	return TimeSinceAttemptedFire > 0.0f;
 }
 
 void ABall::Pause()
@@ -369,6 +407,7 @@ void ABall::ZoneEnter(int ZoneType, FVector CenterOfGravity, FVector LaunchDirec
 void ABall::BumperHit()
 {
 	TimeSinceMeshChange = 0.0f;
+	TimeSinceAttemptedFire = 0.0f;
 }
 
 void ABall::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
@@ -528,17 +567,20 @@ void ABall::DebugTick()
 		switch (CurrentZoneState)
 		{
 			case InDeadZone:
-				GEngine->AddOnScreenDebugMessage(1, 5.f, FColor::Red, FString::Printf(TEXT("In Dead Zone")));
+				GEngine->AddOnScreenDebugMessage(3, 5.f, FColor::Red, FString::Printf(TEXT("In Dead Zone")));
 				break;
 			case InLaunchZone:
-				GEngine->AddOnScreenDebugMessage(1, 5.f, FColor::Red, FString::Printf(TEXT("In Launch Zone")));
+				GEngine->AddOnScreenDebugMessage(3, 5.f, FColor::Red, FString::Printf(TEXT("In Launch Zone")));
 				break;
 			case InNoZone:
-				GEngine->AddOnScreenDebugMessage(1, 5.f, FColor::Red, FString::Printf(TEXT("In No Zone")));
+				GEngine->AddOnScreenDebugMessage(3, 5.f, FColor::Red, FString::Printf(TEXT("In No Zone")));
 				break;
 		}
 
-		GEngine->AddOnScreenDebugMessage(1, 5.f, FColor::Red, FString::Printf(TEXT("Last in zone: %f"), TimeSinceLastInZone));
+		GEngine->AddOnScreenDebugMessage(4, 5.f, FColor::Red, FString::Printf(TEXT("Last in zone: %f"), TimeSinceLastInZone));
+
+		GEngine->AddOnScreenDebugMessage(5, 5.f, FColor::Red, FString::Printf(TEXT("Timer Since Last Failed Shot: %f"), TimeSinceAttemptedFire));
+
 	}
 }
 
@@ -587,6 +629,7 @@ void ABall::ResetChargeState()
 	TimeSinceMeshChange = 0.0f;
 	CurrentCharge = 0.0f;
 	CurrentChargeUpTimePassed = 0.0f;
+	IsPowerIterating = true;
 	Pointlight->SetIntensity(0.0f);
 }
 

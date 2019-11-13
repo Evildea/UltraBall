@@ -86,7 +86,13 @@ public:
 	FString GetParString();
 
 	UFUNCTION(BlueprintCallable)
+	FString GetFinishParString();
+
+	UFUNCTION(BlueprintCallable)
 	float GetCharge();
+
+	UFUNCTION(BlueprintCallable)
+	bool GetBurnedOutStatus();
 
 	UFUNCTION()
 	void Pause();
@@ -149,7 +155,9 @@ private:
 	float inAirBlackenAmount;
 	float TimeSinceMeshChange;
 	float TimeSinceLastInZone;
+	float TimeSinceAttemptedFire;
 	bool StartTimerSinceLastInZone;
+	bool IsPowerIterating;
 
 	bool isCameraLocked;
 	float CameraZoomAmountLock;
