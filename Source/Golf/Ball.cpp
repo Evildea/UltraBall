@@ -107,6 +107,7 @@ void ABall::BeginPlay()
 	StartTimerSinceLastInZone = false;
 	isCameraLocked = false;
 	CameraZoomAmountLock = 0.0f;
+	IsPowerIterating = true;
 
 	CurrentShotsTakenInTheAir = 0;
 
@@ -128,8 +129,29 @@ void ABall::Tick(float DeltaTime)
 		CurrentChargeUpTimePassed += DeltaTime;
 
 		// Calculate the current amount of charge to be applied to UltraBall.
-		CurrentCharge = (CurrentCharge < MaxChargePossibleAtFullChargeUp) ? ((MaxChargePossibleAtFullChargeUp / TimeNeededToReachFullChargeUp) * CurrentChargeUpTimePassed) : MaxChargePossibleAtFullChargeUp;
-	
+		//CurrentCharge = (CurrentCharge < MaxChargePossibleAtFullChargeUp) ? ((MaxChargePossibleAtFullChargeUp / TimeNeededToReachFullChargeUp) * CurrentChargeUpTimePassed) : MaxChargePossibleAtFullChargeUp;
+		float ChargeAmount = (MaxChargePossibleAtFullChargeUp / TimeNeededToReachFullChargeUp) * CurrentChargeUpTimePassed;
+
+		if (IsPowerIterating)
+			CurrentCharge = ChargeAmount;
+		else
+			CurrentCharge = MaxChargePossibleAtFullChargeUp - ChargeAmount;
+
+		if (IsPowerIterating && CurrentCharge >= MaxChargePossibleAtFullChargeUp)
+		{
+			CurrentCharge = MaxChargePossibleAtFullChargeUp;
+			CurrentChargeUpTimePassed = 0.0f;
+			IsPowerIterating = false;
+		}
+
+		if (!IsPowerIterating && CurrentCharge < 0.0f)
+		{
+			CurrentCharge = 0.0f;
+			CurrentChargeUpTimePassed = 0.0f;
+			IsPowerIterating = true;
+		}
+
+
 		//This section predicts what direction the shot will go.
 		FVector offset;
 		if (isCameraLocked)
@@ -320,7 +342,11 @@ FString ABall::GetFinishParString()
 float ABall::GetCharge()
 {
 	float Calculation = (1.0f / TimeNeededToReachFullChargeUp) * CurrentChargeUpTimePassed;
-	return (Calculation < 1.0f) ? Calculation : 1.0f;
+
+	if (IsPowerIterating)
+		return (Calculation < 1.0f) ? Calculation : 1.0f;
+	else
+		return (Calculation > 0.0f) ? 1.0f - Calculation : 1.0f;
 }
 
 bool ABall::GetBurnedOutStatus()
@@ -603,6 +629,7 @@ void ABall::ResetChargeState()
 	TimeSinceMeshChange = 0.0f;
 	CurrentCharge = 0.0f;
 	CurrentChargeUpTimePassed = 0.0f;
+	IsPowerIterating = true;
 	Pointlight->SetIntensity(0.0f);
 }
 
