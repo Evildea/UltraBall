@@ -40,7 +40,7 @@ ABall::ABall()
 	if (Material.Succeeded())
 		UltraBall->SetMaterial(0, Material.Object);
 
-	// Setup the predictor rings
+	// Setup the Predictor rings
 	PredictorRing01 = CreateDefaultSubobject<UStaticMeshComponent>("PredictorRing01");
 	SetupRing(PredictorRing01);
 	PredictorArray.Add(PredictorRing01);
@@ -146,7 +146,7 @@ void ABall::Tick(float DeltaTime)
 	// Countdown the timer set if the user attempts to fire when they're out of charges. This is used by the HUDWidget.
 	TimeSinceAttemptedFire = (TimeSinceAttemptedFire > 0.0f) ? TimeSinceAttemptedFire - DeltaTime : 0.0f;
 
-	// Hide each Predictor
+	// Hide each Predictor Ring
 	for (int i = 0; i < PredictorArray.Num(); i++)
 		PredictorArray[i]->SetVisibility(false);
 
@@ -212,7 +212,7 @@ void ABall::Tick(float DeltaTime)
 		TArray<FPredictProjectilePathPointData> Locations;
 		Locations = ProjectileResult.PathData;
 		
-		// Update Each Predictor
+		// Update Each Predictor Ring
 		for (int i = 0; i < PredictorArray.Num(); i++)
 		{
 			SetRing(PredictorArray[i], Locations[1 + (i * 2)].Location);
@@ -678,7 +678,6 @@ void ABall::SetMesh(UStaticMesh* MeshToUse)
 	FVector AngularVelocity = UltraBall->GetPhysicsAngularVelocity();
 
 	UltraBall->SetStaticMesh(MeshToUse);
-
 	UltraBall->SetPhysicsLinearVelocity(LinearVelocity);
 	UltraBall->SetPhysicsAngularVelocity(AngularVelocity);
 }
@@ -690,6 +689,8 @@ void ABall::SetupRing(UStaticMeshComponent *Mesh)
 	Mesh->SetSimulatePhysics(false);
 	Mesh->SetGenerateOverlapEvents(false);
 	Mesh->SetCanEverAffectNavigation(false);
+	Mesh->SetVisibility(false);
+	Mesh->SetRelativeScale3D(FVector(0.5f));
 }
 
 void ABall::SetRing(UStaticMeshComponent *Mesh, FVector Location)
