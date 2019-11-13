@@ -157,6 +157,7 @@ private:
 	float TimeSinceLastInZone;
 	float TimeSinceAttemptedFire;
 	bool StartTimerSinceLastInZone;
+	bool IsPowerIterating;
 
 	bool isCameraLocked;
 	float CameraZoomAmountLock;
