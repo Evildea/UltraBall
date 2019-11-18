@@ -107,11 +107,14 @@ public:
 	UFUNCTION()
 	void CameraUnLock();
 
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintPure)
 	FString GetParString();
 
 	UFUNCTION(BlueprintCallable)
 	FString GetFinishParString();
+
+	UFUNCTION(BlueprintPure)
+	bool GetIfOutsidePar();
 
 	UFUNCTION(BlueprintCallable)
 	float GetCharge();
@@ -123,6 +126,7 @@ public:
 	void BumperHit();
 
 	void MeshChangeTimerExpired();
+	void hasAttemptedShotWhileMovingTimerExpired();
 
 	UFUNCTION()
 	void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
@@ -152,7 +156,8 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Designer")
 	int MaxParAllowed;
 
-	bool GetBurnedOutStatus();
+	UFUNCTION(BlueprintCallable)
+	bool GetHasAttemptedShotWhileMoving();
 
 private:
 
@@ -164,6 +169,7 @@ private:
 	bool isMeshChangeAllowed;
 	bool isCameraLocked;
 	bool isGamePaused;
+	bool hasAttemptedShotWhileMoving;
 	float CameraZoomAmountLock;
 	FVector CameraLocationLock;
 	FRotator CameraAngleLock;

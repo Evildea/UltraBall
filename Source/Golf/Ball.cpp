@@ -116,6 +116,7 @@ void ABall::BeginPlay()
 	CameraZoomAmountLock = 0.0f;
 	isGamePaused = false;
 	isMeshChangeAllowed = false;
+	hasAttemptedShotWhileMoving = false;
 }
 
 // Called every frame
@@ -222,6 +223,12 @@ void ABall::Fire()
 		StartCharging();
 		CurrentFireState = Charging;
 	}
+	else
+	{
+		hasAttemptedShotWhileMoving = true;
+		FTimerHandle AttemptedShotTimer;
+		GetWorldTimerManager().SetTimer(AttemptedShotTimer, this, &ABall::hasAttemptedShotWhileMovingTimerExpired, 1.0f);
+	}
 }
 
 void ABall::EndFire()
@@ -302,12 +309,17 @@ void ABall::CameraUnLock()
 
 FString ABall::GetParString()
 {
-	return FString::Printf(TEXT("Par: %d/%d"), CurrentPar, MaxParAllowed);
+	return FString::Printf(TEXT("par: %d/%d"), CurrentPar, MaxParAllowed);
 }
 
 FString ABall::GetFinishParString()
 {
-	return FString::Printf(TEXT("Completed in %d out of %d shots"), CurrentPar, MaxParAllowed);
+	return FString::Printf(TEXT("completed in %d out of %d shots"), CurrentPar, MaxParAllowed);
+}
+
+bool ABall::GetIfOutsidePar()
+{
+	return CurrentPar > MaxParAllowed;
 }
 
 float ABall::GetCharge()
@@ -328,6 +340,11 @@ void ABall::BumperHit()
 void ABall::MeshChangeTimerExpired()
 {
 	isMeshChangeAllowed = true;
+}
+
+void ABall::hasAttemptedShotWhileMovingTimerExpired()
+{
+	hasAttemptedShotWhileMoving = false;
 }
 
 void ABall::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
@@ -358,9 +375,9 @@ void ABall::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveCo
 	}
 }
 
-bool ABall::GetBurnedOutStatus()
+bool ABall::GetHasAttemptedShotWhileMoving()
 {
-	return false;
+	return hasAttemptedShotWhileMoving;
 }
 
 void ABall::UpdateComponents()
