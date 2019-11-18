@@ -240,7 +240,11 @@ void ABall::EndFire()
 		CurrentFireState = Idle;
 
 		// Load the Simple Mesh to stop UltraBall from flying around randomly and set the timer for allowing a swap back to the complex mesh to at least 1 second.
-		UltraBall->SetStaticMesh(SimpleAsset);
+		if (CurrentCharge > 0.1f)
+			UltraBall->SetStaticMesh(SimpleAsset);
+		else
+			UltraBall->SetStaticMesh(ComplexAsset);
+
 		isMeshChangeAllowed = false;
 		FTimerHandle MeshChangeTimer;
 		GetWorldTimerManager().SetTimer(MeshChangeTimer, this, &ABall::MeshChangeTimerExpired, 1.0f);
