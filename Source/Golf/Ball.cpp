@@ -4,13 +4,13 @@
 #include "UObject/ConstructorHelpers.h" 
 #include "Components/StaticMeshComponent.h"
 #include "Components/InputComponent.h" 
+#include "Components/PointLightComponent.h" 
+#include "Components/AudioComponent.h"
 #include "Camera/CameraComponent.h" 
 #include "GameFramework/SpringArmComponent.h" 
 #include "Materials/MaterialInstanceDynamic.h" 
-#include "Components/PointLightComponent.h" 
 #include <Runtime/Engine/Classes/Engine/Engine.h>
 #include "Kismet/GameplayStatics.h"
-#include "Components/AudioComponent.h"
 #include "PhysicsEngine/BodySetup.h"
 #include "TimerManager.h"
 
@@ -128,7 +128,7 @@ void ABall::Tick(float DeltaTime)
 	for (int i = 0; i < PredictorArray.Num(); i++)
 		PredictorArray[i]->SetVisibility(false);
 
-		//This section predicts what direction the shot will go.
+		//This section predicts what direction the shot will go roughly.
 	if (CurrentFireState == Charging)
 	{
 
