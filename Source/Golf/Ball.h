@@ -48,7 +48,7 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Designer")
 	class UAudioComponent* Sound;
 
-	// Predictor Paths
+	// Predictor Rings - These are used to draw where the ball is going to go.
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* PredictorRing01;
 
