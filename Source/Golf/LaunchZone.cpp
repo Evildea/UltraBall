@@ -80,7 +80,7 @@ void ALaunchZone::OnOverlapBegin(UPrimitiveComponent * OverlappedComp, AActor * 
 		
 		if (ball != nullptr)
 		{
-			ball->ZoneEnter(1, GetActorLocation(), Arrow->GetComponentLocation(), EjectPower);
+			//ball->ZoneEnter(1, GetActorLocation(), Arrow->GetComponentLocation(), EjectPower);
 		}
 
 		if (Sound != nullptr)

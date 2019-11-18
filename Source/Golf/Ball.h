@@ -77,6 +77,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void setGamePauseState(bool isPaused) { isGamePaused = isPaused; }
 
+	UFUNCTION(BlueprintCallable)
+	void setCurrentCharge(float CurrentCharge);
+
 	UFUNCTION()
 	void ZoomIn();
 
@@ -113,20 +116,22 @@ public:
 	UFUNCTION(BlueprintCallable)
 	float GetCharge();
 
-	UFUNCTION(BlueprintCallable)
-	bool GetBurnedOutStatus();
-
 	UFUNCTION()
 	void Pause();
 
 	UFUNCTION()
-	void ZoneEnter(int ZoneType, FVector CenterOfGravity, FVector LaunchDirection, float LaunchPower);
-
-	UFUNCTION()
 	void BumperHit();
+
+	void MeshChangeTimerExpired();
 
 	UFUNCTION()
 	void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void StartCharging();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void EndCharging();
 
 	// Designer Functionality
 	UPROPERTY(EditAnywhere, Category = "Designer", meta = (ClampMin = "100.0", ClampMax = "10000.0", UIMin = "100.0", UIMax = "10000.0"))
@@ -138,75 +143,38 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Designer", meta = (ClampMin = "1.0", ClampMax = "100.0", UIMin = "1.0", UIMax = "100.0"))
 	float ZoomInSpeed;
 
-	UPROPERTY(EditAnywhere, Category = "Designer", meta = (ClampMin = "0.01", ClampMax = "10.0", UIMin = "0.01", UIMax = "10.0"))
-	float TimeNeededToReachFullChargeUp;
-
 	UPROPERTY(EditAnywhere, Category = "Designer", meta = (ClampMin = "0.01", ClampMax = "30.0", UIMin = "0.01", UIMax = "30.0"))
 	float MaxChargePossibleAtFullChargeUp;
 
 	UPROPERTY(EditAnywhere, Category = "Designer", meta = (ClampMin = "1.0", ClampMax = "2000.0", UIMin = "1.0", UIMax = "2000.0"))
 	float SpeedAtWhichMeshTransitionsBackToComplex;
 
-	UPROPERTY(EditAnywhere, Category = "Designer", meta = (ClampMin = "1.0", ClampMax = "500.0", UIMin = "1.0", UIMax = "500.0"))
-	float MaxDistanceOffGroundConsideredAir;
-
-	UPROPERTY(EditAnywhere, Category = "Designer")
-	int MaxNumberOfShotsAllowedInTheAir;
-
 	UPROPERTY(EditAnywhere, Category = "Designer")
 	int MaxParAllowed;
 
-	UPROPERTY(EditAnywhere, Category = "Designer")
-	bool IsInDebugMode;
+	bool GetBurnedOutStatus();
 
 private:
 
 	enum FireStates {Idle, Charging};
-	enum ChargeStates {HaveCharges, HaveNoCharges};
-	enum LocationStates {OnTheGround, InTheAir};
-	enum ZoneStates {InDeadZone, InLaunchZone, InNoZone};
-
 	FireStates CurrentFireState;
-	ChargeStates CurrentChargeState;
-	LocationStates CurrentLocationState;
-	ZoneStates CurrentZoneState;
 
 	float CurrentZoomAmount;
-	float CurrentChargeUpTimePassed;
 	float CurrentCharge;
-	float inAirBlackenAmount;
-	float TimeSinceMeshChange;
-	float TimeSinceLastInZone;
-	float TimeSinceAttemptedFire;
-	bool StartTimerSinceLastInZone;
-	bool IsPowerIterating;
-
+	bool isMeshChangeAllowed;
 	bool isCameraLocked;
+	bool isGamePaused;
 	float CameraZoomAmountLock;
 	FVector CameraLocationLock;
 	FRotator CameraAngleLock;
-
 	int CurrentPar;
-	int CurrentShotsTakenInTheAir;
-
-	bool isGamePaused;
-
-	FVector CenterOfGravity;
-	FVector LaunchDirection;
-	float LaunchPower;
 
 	// Forces the components such as the arrow and spring arm to update
 	void UpdateComponents();
 
-	void ZoneTick(float DeltaTime);
 	void MaterialTick(float DeltaTime);
-	void LocationTick();
-	void DebugTick();
 	void MeshChangeTick(float DeltaTime);
-	float SnapToCenterOfGravityTick();
 
-
-	void ResetChargeState();
 	void SetMesh(UStaticMesh* MeshToUse);
 	void SetupRing(UStaticMeshComponent *Mesh);
 	void SetRing(UStaticMeshComponent *Mesh, FVector Location);

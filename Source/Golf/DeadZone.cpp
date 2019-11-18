@@ -70,7 +70,7 @@ void ADeadZone::OnOverlapBegin(UPrimitiveComponent * OverlappedComp, AActor * Ot
 
 		if (ball != nullptr)
 		{
-			ball->ZoneEnter(0, GetActorLocation(), FVector(0.0f), 0);
+			//ball->ZoneEnter(0, GetActorLocation(), FVector(0.0f), 0);
 		}
 
 		if (Sound != nullptr)
