@@ -88,12 +88,12 @@ ABall::ABall()
 	Pointlight->SetupAttachment(RootComponent);
 
 	// Set up inital values that can be modified by the Designer.
-	MinZoomInLength = 200.0f;	// The Min Zoom Out Distance of the Camera
-	MaxZoomOutLength = 1000.0f;	// The Max Zoom Out Distance of the Camera
-	ZoomInSpeed = 93.0f;	// The Speed at which the Camera can Zoom in and Out
-	MaxChargePossibleAtFullChargeUp = 2.0f;		// The Maximum Charge the Ball can Reach
-	SpeedAtWhichMeshTransitionsBackToComplex = 300.0f;
-	MaxParAllowed = 20;		// The Maximum Allowed Par to win the Level
+	MinZoomInLength = 200.0f;							// The Min Zoom Out Distance of the Camera
+	MaxZoomOutLength = 1000.0f;							// The Max Zoom Out Distance of the Camera
+	ZoomInSpeed = 93.0f;								// The Speed at which the Camera can Zoom in and Out
+	MaxChargePossibleAtFullChargeUp = 6.0f;				// The Maximum Charge the Ball can Reach
+	SpeedAtWhichMeshTransitionsBackToComplex = 300.0f;	// The Speed/Velocity at which to Swap Back to a Complex Mesh from a Simple Mesh.
+	MaxParAllowed = 20;									// The Maximum Allowed Par to win the Level
 
 	// Update the Camera based on their inital values.
 	UpdateComponents();
@@ -138,7 +138,7 @@ void ABall::Tick(float DeltaTime)
 		else
 			offset = GetActorLocation() - Camera->GetComponentLocation();
 
-		offset = offset.GetSafeNormal(1.0f) * UltraBall->GetMass() * CurrentCharge * 12.5f;
+		offset = offset.GetSafeNormal(1.0f) * UltraBall->GetMass() * CurrentCharge * 25.0f;
 		FPredictProjectilePathParams Predictor;
 		FPredictProjectilePathResult ProjectileResult;
 		ECollisionChannel CollisionChannel = ECC_Visibility;
