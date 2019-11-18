@@ -239,7 +239,7 @@ void ABall::EndFire()
 		// Charge back to an Idle Charge State.
 		CurrentFireState = Idle;
 
-		// Load the Simple Mesh to stop UltraBall from flying around randomly and set the timer for allowing a swap back to the complex mesh to at least 1 second.
+		// Load the Simple Mesh if the speed is high enough to stop UltraBall from flying off randomly. Also set the timer for allowing a swap back to the complex mesh to at least 1 second.
 		if (CurrentCharge > 0.1f)
 			UltraBall->SetStaticMesh(SimpleAsset);
 		else
