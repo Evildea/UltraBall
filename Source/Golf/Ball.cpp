@@ -314,7 +314,15 @@ FString ABall::GetParString()
 
 FString ABall::GetFinishParString()
 {
-	return FString::Printf(TEXT("completed in %d out of %d shots"), CurrentPar, MaxParAllowed);
+	if (GetIfOutsidePar())
+	{
+		if (CurrentPar - MaxParAllowed == 1)
+			return FString::Printf(TEXT("the maximum par allowed is %d. you are %d shot over par."), MaxParAllowed, CurrentPar - MaxParAllowed);
+		else
+			return FString::Printf(TEXT("the maximum par allowed is %d. you are %d shots over par."), MaxParAllowed, CurrentPar - MaxParAllowed);
+	}
+	else
+		return FString::Printf(TEXT("completed in %d out of %d shots"), CurrentPar, MaxParAllowed);
 }
 
 bool ABall::GetIfOutsidePar()
