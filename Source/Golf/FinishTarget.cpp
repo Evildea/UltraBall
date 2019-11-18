@@ -14,7 +14,7 @@ AFinishTarget::AFinishTarget()
 
 	// Setup static mesh for UltraBall
 	UltraBall = CreateDefaultSubobject<UStaticMeshComponent>("UltraBall");
-	ConstructorHelpers::FObjectFinder<UStaticMesh> UltraBallSimple(TEXT("StaticMesh'/Game/Models/UltraBallS.UltraBallS'"));
+	ConstructorHelpers::FObjectFinder<UStaticMesh> UltraBallSimple(TEXT("StaticMesh'/Game/Models/UltraBallC.UltraBallC'"));
 	UStaticMesh* SimpleAsset = UltraBallSimple.Object;
 	UltraBall->SetStaticMesh(SimpleAsset);
 	UltraBall->SetSimulatePhysics(true);

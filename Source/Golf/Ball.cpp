@@ -138,7 +138,7 @@ void ABall::Tick(float DeltaTime)
 		else
 			offset = GetActorLocation() - Camera->GetComponentLocation();
 
-		offset = offset.GetSafeNormal(1.0f) * UltraBall->GetMass() * CurrentCharge * 25.0f;
+		offset = offset.GetSafeNormal(1.0f) * UltraBall->GetMass() * CurrentCharge * 27.0f;
 		FPredictProjectilePathParams Predictor;
 		FPredictProjectilePathResult ProjectileResult;
 		ECollisionChannel CollisionChannel = ECC_Visibility;
