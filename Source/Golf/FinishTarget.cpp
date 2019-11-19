@@ -12,21 +12,37 @@ AFinishTarget::AFinishTarget()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	// Setup static mesh for UltraBall
-	UltraBall = CreateDefaultSubobject<UStaticMeshComponent>("UltraBall");
-	ConstructorHelpers::FObjectFinder<UStaticMesh> UltraBallSimple(TEXT("StaticMesh'/Game/Models/UltraBallC.UltraBallC'"));
-	UStaticMesh* SimpleAsset = UltraBallSimple.Object;
-	UltraBall->SetStaticMesh(SimpleAsset);
-	UltraBall->SetSimulatePhysics(true);
-	UltraBall->SetRelativeScale3D(FVector(3.0f));
-	UltraBall->SetNotifyRigidBodyCollision(true);
-	UltraBall->OnComponentHit.AddDynamic(this, &AFinishTarget::OnHit);
-	RootComponent = UltraBall;
+	//Setup the Scene Component
+	Base = CreateDefaultSubobject<USceneComponent>("Base");
+	RootComponent = Base;
+
+	// Setup the static mesh for Outer Ring of the UltraBall
+	UltraBallOuter = CreateDefaultSubobject<UStaticMeshComponent>("UltraBallOuter");
+	ConstructorHelpers::FObjectFinder<UStaticMesh> UltraBallComplex(TEXT("StaticMesh'/Game/Models/UltraBallC.UltraBallC'"));
+	UStaticMesh* ComplexAsset = UltraBallComplex.Object;
+	UltraBallOuter->SetStaticMesh(ComplexAsset);
+	UltraBallOuter->SetSimulatePhysics(true);
+	UltraBallOuter->SetRelativeScale3D(FVector(3.0f));
+	UltraBallOuter->SetNotifyRigidBodyCollision(true);
+	UltraBallOuter->OnComponentHit.AddDynamic(this, &AFinishTarget::OnHit);
+	UltraBallOuter->SetupAttachment(Base);
+
+	// Setup the static mesh for the Inner Ring of the UltraBall
+	UltraBallInner = CreateDefaultSubobject<UStaticMeshComponent>("UltraBallInner");
+	UltraBallInner->SetStaticMesh(ComplexAsset);
+	UltraBallInner->SetSimulatePhysics(false);
+	UltraBallInner->SetRelativeScale3D(FVector(2.0f));
+	UltraBallInner->SetNotifyRigidBodyCollision(false);
+	UltraBallInner->SetCollisionProfileName(FName("NoCollision"));
+	UltraBallInner->SetupAttachment(Base);
 
 	// Apply Dynamic Material to UltraBall
-	ConstructorHelpers::FObjectFinder<UMaterialInstance> Material(TEXT("MaterialInstanceConstant'/Game/Materials/UltraBall_MI.UltraBall_MI'"));
+	ConstructorHelpers::FObjectFinder<UMaterial> Material(TEXT("Material'/Game/Materials/Wireframe.Wireframe'"));
 	if (Material.Succeeded())
-		UltraBall->SetMaterial(0, Material.Object);
+	{
+		UltraBallOuter->SetMaterial(0, Material.Object);
+		UltraBallInner->SetMaterial(0, Material.Object);
+	}
 
 }
 
@@ -42,6 +58,14 @@ void AFinishTarget::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	// Cause the Inner Ring to Constantly Rotate.
+	FRotator Rotation = UltraBallInner->GetComponentRotation();
+	Rotation.Yaw += 50.0f * DeltaTime;
+	Rotation.Roll += 50.0f * DeltaTime;
+	UltraBallInner->SetRelativeRotation(Rotation);
+
+	// Update the Inner Ring's position to match the Outer Rings position.
+	UltraBallInner->SetWorldLocation(UltraBallOuter->GetComponentLocation());
 }
 
 void AFinishTarget::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)

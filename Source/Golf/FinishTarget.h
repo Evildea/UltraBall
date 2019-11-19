@@ -25,7 +25,13 @@ public:
 
 	// Visible Components
 	UPROPERTY(VisibleAnywhere)
-	UStaticMeshComponent* UltraBall;
+	USceneComponent* Base;
+
+	UPROPERTY(VisibleAnywhere)
+	UStaticMeshComponent* UltraBallOuter;
+
+	UPROPERTY(VisibleAnywhere)
+	UStaticMeshComponent* UltraBallInner;
 	
 	UFUNCTION()
 	void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
