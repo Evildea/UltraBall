@@ -98,6 +98,7 @@ ABall::ABall()
 	MaxChargePossibleAtFullChargeUp = 6.0f;				// The Maximum Charge the Ball can Reach
 	SpeedAtWhichMeshTransitionsBackToComplex = 300.0f;	// The Speed/Velocity at which to Swap Back to a Complex Mesh from a Simple Mesh.
 	MaxParAllowed = 20;									// The Maximum Allowed Par to win the Level
+	isLastLevel = false;								// Whether this UltraBall is on the last level.
 
 	// Update the Camera based on their inital values.
 	UpdateComponents();
@@ -143,7 +144,7 @@ void ABall::Tick(float DeltaTime)
 			offset = GetActorLocation() - CameraLocationLock;
 		else
 			offset = GetActorLocation() - Camera->GetComponentLocation();
-		offset = offset.GetSafeNormal(1.0f) * UltraBall->GetMass() * CurrentCharge * 27.0f;
+		offset = offset.GetSafeNormal(1.0f) * UltraBall->GetMass() * CurrentCharge * 35.0f;
 
 		// Setup the predictor.
 		FPredictProjectilePathParams Predictor;
