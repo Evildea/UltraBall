@@ -393,25 +393,31 @@ void ABall::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveCo
 	{
 		if (GetVelocity().Size() > 50.0f)
 		{
-			// Initialise Paramaters for a Ray Trace.
-			FVector StartLocation = GetActorLocation();
-			FVector EndLocation = GetActorLocation();
-			ECollisionChannel CollisionChannel = ECC_Visibility;
-			FCollisionQueryParams CollisionParameters;
-			FHitResult Result;
 
-			// Setup Parameters for the Ray Trace.
-			CollisionParameters.AddIgnoredActor(this);
-			EndLocation.Z -= 50;
+			FVector Location = GetActorLocation();
+			Location.Z -= 100.0f;
+			PlaySoundOnImpact(Location);
 
-			// Perform Ray Trace and Setup LOCATION STATE.
-			GetWorld()->LineTraceSingleByChannel(Result, StartLocation, EndLocation, CollisionChannel, CollisionParameters, FCollisionResponseParams::DefaultResponseParam);
-			if (Result.GetActor() != NULL)
-			{
-				// Play the bounce sound.
-				Sound->Play(0.0f);
-				Sound->SetVolumeMultiplier((0.5f / 50.0f) * GetVelocity().Size());
-			}
+			Location = GetActorLocation();
+			Location.Z += 100.0f;
+			PlaySoundOnImpact(Location);
+
+			Location = GetActorLocation();
+			Location.X += 100.0f;
+			PlaySoundOnImpact(Location);
+
+			Location = GetActorLocation();
+			Location.X -= 100.0f;
+			PlaySoundOnImpact(Location);
+
+			Location = GetActorLocation();
+			Location.Y += 100.0f;
+			PlaySoundOnImpact(Location);
+
+			Location = GetActorLocation();
+			Location.Y -= 100.0f;
+			PlaySoundOnImpact(Location);
+
 		}
 	}
 }
@@ -456,5 +462,25 @@ void ABall::SetRing(UStaticMeshComponent *Mesh, FVector Location)
 	Mesh->SetWorldLocation(Location);
 	Mesh->SetWorldRotation(SpringArm->GetComponentRotation());
 	Mesh->SetVisibility(true);
+}
+
+void ABall::PlaySoundOnImpact(FVector EndLocation)
+{
+	// Initialise Paramaters for a Ray Trace.
+	FVector StartLocation = GetActorLocation();
+	ECollisionChannel CollisionChannel = ECC_Visibility;
+	FCollisionQueryParams CollisionParameters;
+	FHitResult Result;
+	CollisionParameters.AddIgnoredActor(this);
+
+	// Setup Parameters for the Ray Trace below object.
+	EndLocation.Z -= 100;
+	GetWorld()->LineTraceSingleByChannel(Result, StartLocation, EndLocation, CollisionChannel, CollisionParameters, FCollisionResponseParams::DefaultResponseParam);
+	if (Result.GetActor() != NULL)
+	{
+		// Play the bounce sound.
+		Sound->Play(0.0f);
+		Sound->SetVolumeMultiplier((0.5f / 50.0f) * GetVelocity().Size());
+	}
 }
 

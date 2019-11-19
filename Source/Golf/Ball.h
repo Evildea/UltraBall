@@ -232,4 +232,7 @@ private:
 	// Timer: Stop showing the "X" after the player attempted an illegal shot.
 	void hasAttemptedShotWhileMovingTimerExpired() { hasAttemptedShotWhileMoving = false; }
 
+	// Play a sound upon impact with the ground or a wall in front of UltraBall.
+	void PlaySoundOnImpact(FVector EndLocation);
+
 };
