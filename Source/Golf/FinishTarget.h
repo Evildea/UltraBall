@@ -48,4 +48,5 @@ public:
 private:
 
 	bool HasFinishedLevel;
+
 };

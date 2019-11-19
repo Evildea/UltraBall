@@ -175,10 +175,33 @@ void ABall::Tick(float DeltaTime)
 	}
 
 	// Change to a Sphere Mesh Colider if UltraBall is moving too fast and a Dodecahedron Mesh Colider if it's moving too slow.
-	MeshChangeTick(DeltaTime);
+	if (isMeshChangeAllowed)
+	{
+		if (UltraBall->GetPhysicsLinearVelocity().Size() >= SpeedAtWhichMeshTransitionsBackToComplex)
+		{
+			if (UltraBall->GetStaticMesh() != SimpleAsset)
+				SetMesh(SimpleAsset);
+		}
+		else
+		{
+			if (UltraBall->GetStaticMesh() != ComplexAsset)
+				SetMesh(ComplexAsset);
+		}
+	}
 
 	// Update the Dynamic Material and Lights.
-	MaterialTick(DeltaTime);
+	FVector CameraDistance = Camera->GetComponentLocation() - GetActorLocation();
+	if (CameraDistance.Size() < 60.0f)
+		UltraBall->SetVisibility(false);
+	else
+	{
+		UltraBall->SetVisibility(true);
+		float transparency = 1.0f - ((1.0f / CurrentZoomAmount) * (CameraDistance.Size() - 100.0f));
+		if (transparency < 0.5f) { transparency = 0.0f; }
+		if (transparency >= 0.5f) { transparency = -((0.5 - transparency) * 2); }
+		if (transparency > 0.8f) { transparency = 1.0f; }
+		UltraBall->SetScalarParameterValueOnMaterials("Alpha", transparency);
+	}
 
 }
 
@@ -355,18 +378,6 @@ FString ABall::GetFinishParString()
 		return FString::Printf(TEXT("completed in %d out of %d shots"), CurrentPar, MaxParAllowed);
 }
 
-void ABall::MeshChangeTimerExpired()
-{
-	// Allow mesh changing.
-	isMeshChangeAllowed = true;
-}
-
-void ABall::hasAttemptedShotWhileMovingTimerExpired()
-{
-	// Stop showing the "X" after the player attempted an illegal shot.
-	hasAttemptedShotWhileMoving = false;
-}
-
 void ABall::BumperHit()
 {
 	isMeshChangeAllowed = false;
@@ -410,41 +421,6 @@ void ABall::UpdateComponents()
 	if (CurrentZoomAmount < MinZoomInLength) { CurrentZoomAmount = MinZoomInLength; }
 	if (CurrentZoomAmount > MaxZoomOutLength) { CurrentZoomAmount = MaxZoomOutLength; }
 	SpringArm->TargetArmLength = CurrentZoomAmount;
-}
-
-void ABall::MaterialTick(float DeltaTime)
-{
-	// Make UltraBall Transparent if the Camera is too close.
-	FVector CameraDistance = Camera->GetComponentLocation() - GetActorLocation();
-	if (CameraDistance.Size() < 60.0f)
-		UltraBall->SetVisibility(false);
-	else
-	{
-		UltraBall->SetVisibility(true);
-		float transparency = 1.0f - ((1.0f / CurrentZoomAmount) * (CameraDistance.Size() - 100.0f));
-		if (transparency < 0.5f) { transparency = 0.0f; }
-		if (transparency >= 0.5f) { transparency = -((0.5 - transparency) * 2); }
-		if (transparency > 0.8f) { transparency = 1.0f; }
-		UltraBall->SetScalarParameterValueOnMaterials("Alpha", transparency);
-	}
-}
-
-void ABall::MeshChangeTick(float DeltaTime)
-{
-	// Determine which mesh to use based on the speed set by the designer.
-	if (isMeshChangeAllowed)
-	{
-		if (UltraBall->GetPhysicsLinearVelocity().Size() >= SpeedAtWhichMeshTransitionsBackToComplex)
-		{
-			if (UltraBall->GetStaticMesh() != SimpleAsset)
-				SetMesh(SimpleAsset);
-		}
-		else
-		{
-			if (UltraBall->GetStaticMesh() != ComplexAsset)
-				SetMesh(ComplexAsset);
-		}
-	}
 }
 
 void ABall::SetMesh(UStaticMesh* MeshToUse)

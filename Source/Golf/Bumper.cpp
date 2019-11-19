@@ -12,7 +12,7 @@
 ABumper::ABumper()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 
 	Bumper = CreateDefaultSubobject<USkeletalMeshComponent>("Bumper");
 	static ConstructorHelpers::FObjectFinder<USkeletalMesh> BumperMesh(TEXT("SkeletalMesh'/Game/Models/M_Bumper45.M_Bumper45'"));
@@ -55,13 +55,6 @@ void ABumper::BeginPlay()
 	
 }
 
-// Called every frame
-void ABumper::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-}
-
 void ABumper::OnOverlapBegin(UPrimitiveComponent * OverlappedComp, AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)
 {
 	// Other Actor is the actor that triggered the event. Check that is not ourself.  
@@ -69,6 +62,7 @@ void ABumper::OnOverlapBegin(UPrimitiveComponent * OverlappedComp, AActor * Othe
 	{
 		ABall* ball = Cast<ABall>(OtherActor);
 
+		// Fire UltraBall in the direction of the Bumper.
 		if (ball != nullptr)
 		{
 			OtherComp->SetPhysicsLinearVelocity(FVector(0.0f, 0.0f, 0.0f));
@@ -76,12 +70,14 @@ void ABumper::OnOverlapBegin(UPrimitiveComponent * OverlappedComp, AActor * Othe
 			ball->BumperHit();
 		}
 
+		// Play the Bumper sound.
 		if (Sound != nullptr)
 		{
 			if (!Sound->IsPlaying())
 				Sound->Play(0.0f);
 		}
 
+		// Play the Bumper Animation.
 		Bumper->PlayAnimation(Animation, false);
 	}
 
