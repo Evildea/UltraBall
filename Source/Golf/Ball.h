@@ -190,30 +190,38 @@ public:
 
 private:
 
+	// This enumerator determines what state UltraBall is in.
 	enum FireStates {Idle, Charging};
 	FireStates CurrentFireState;
 
+	// Various temporary variables used for controlling UltraBall.
 	float CurrentZoomAmount;
 	float CurrentCharge;
+	float CameraZoomAmountLock;
 	bool isMeshChangeAllowed;
 	bool isCameraLocked;
 	bool isGamePaused;
 	bool hasAttemptedShotWhileMoving;
-	float CameraZoomAmountLock;
 	FVector CameraLocationLock;
 	FRotator CameraAngleLock;
 	int CurrentPar;
 
-	// Forces the components such as the arrow and spring arm to update
+	// Forces the components such as the arrow and spring arm to update.
 	void UpdateComponents();
 
-	void MaterialTick(float DeltaTime);
-	void MeshChangeTick(float DeltaTime);
-
+	// This function is called when changing to a new mesh.
 	void SetMesh(UStaticMesh* MeshToUse);
+
+	// This function is called when generating a predictor ring.
 	void SetupRing(UStaticMeshComponent *Mesh);
+
+	// This function sets the location of a predictor ring.
 	void SetRing(UStaticMeshComponent *Mesh, FVector Location);
-	void MeshChangeTimerExpired();
-	void hasAttemptedShotWhileMovingTimerExpired();
+
+	// Timer: Allow Mesh changing again.
+	void MeshChangeTimerExpired() { isMeshChangeAllowed = true; }
+
+	// Timer: Stop showing the "X" after the player attempted an illegal shot.
+	void hasAttemptedShotWhileMovingTimerExpired() { hasAttemptedShotWhileMoving = false; }
 
 };
