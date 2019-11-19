@@ -22,12 +22,16 @@ ABall::ABall()
 	// Setup static mesh for UltraBall
 	UltraBall = CreateDefaultSubobject<UStaticMeshComponent>("UltraBall");
 
+	// Find the Simple and Complex models used by UltraBall. These models have different coliders applied.
+	// UltraBallS uses a sphere colider. UltraBallC uses a Dodecahedron colider.
 	ConstructorHelpers::FObjectFinder<UStaticMesh> UltraBallSimple(TEXT("StaticMesh'/Game/Models/UltraBallS.UltraBallS'"));
 	ConstructorHelpers::FObjectFinder<UStaticMesh> UltraBallComplex(TEXT("StaticMesh'/Game/Models/UltraBallC.UltraBallC'"));
 
+	// Assign the two meshes to Asset pointers that can be accessed later in the code.
 	SimpleAsset = UltraBallSimple.Object;
 	ComplexAsset = UltraBallComplex.Object;
 
+	// Apply the Static Mesh and Setup the required bindings.
 	UltraBall->SetStaticMesh(ComplexAsset);
 	UltraBall->SetSimulatePhysics(true);
 	UltraBall->SetNotifyRigidBodyCollision(true);
@@ -35,12 +39,12 @@ ABall::ABall()
 	UltraBall->SetAngularDamping(2.0f);
 	RootComponent = UltraBall;
 
-	// Apply Dynamic Material to UltraBall
+	// Apply the Dynamic Material to UltraBall.
 	ConstructorHelpers::FObjectFinder<UMaterialInstance> Material(TEXT("MaterialInstanceConstant'/Game/Materials/UltraBall_MI.UltraBall_MI'"));
 	if (Material.Succeeded())
 		UltraBall->SetMaterial(0, Material.Object);
 
-	// Setup the Predictor rings
+	// Setup the six Predictor rings used to show where the UltraBall will go when fired.
 	PredictorRing01 = CreateDefaultSubobject<UStaticMeshComponent>("PredictorRing01");
 	SetupRing(PredictorRing01);
 	PredictorArray.Add(PredictorRing01);
@@ -65,21 +69,21 @@ ABall::ABall()
 	SetupRing(PredictorRing06);
 	PredictorArray.Add(PredictorRing06);
 
-	// Setup Sound Component
+	// Setup the Sound Component that is called when the ball colides with the floor.
 	Sound = CreateDefaultSubobject<UAudioComponent>("Sound");
 	Sound->SetAutoActivate(false);
 	Sound->SetupAttachment(RootComponent);
 
-	// Setup Spring Arm
+	// Setup the Spring Arm for the Camera.
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>("springarm");
 	SpringArm->bAbsoluteRotation = true;
 	SpringArm->SetupAttachment(RootComponent);
 
-	// Setup Camera
+	// Setup the Camera used by the Viewport.
 	Camera = CreateDefaultSubobject<UCameraComponent>("camera");
 	Camera->SetupAttachment(SpringArm);
 
-	// Setup Point Light
+	// Setup the Point Light that represents the reddish glow.
 	Pointlight = CreateDefaultSubobject<UPointLightComponent>("light");
 	Pointlight->SetAttenuationRadius(300.0f);
 	Pointlight->SetSourceRadius(40.0f);
@@ -87,7 +91,7 @@ ABall::ABall()
 	Pointlight->SetLightColor(FLinearColor(1.0f, 0.0f, 0.0f, 1.0f));
 	Pointlight->SetupAttachment(RootComponent);
 
-	// Set up inital values that can be modified by the Designer.
+	// Set up the inital values that can be modified by the Designer.
 	MinZoomInLength = 200.0f;							// The Min Zoom Out Distance of the Camera
 	MaxZoomOutLength = 1000.0f;							// The Max Zoom Out Distance of the Camera
 	ZoomInSpeed = 93.0f;								// The Speed at which the Camera can Zoom in and Out
@@ -108,6 +112,7 @@ void ABall::BeginPlay()
 {
 	Super::BeginPlay();
 
+	// Setup default values.
 	CurrentFireState = Idle;
 	CurrentZoomAmount = 0.0f;
 	CurrentPar = 0;
@@ -124,54 +129,55 @@ void ABall::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	// Hide each Predictor Ring
+	// Hide each Predictor Ring at the start of the tick.
 	for (int i = 0; i < PredictorArray.Num(); i++)
 		PredictorArray[i]->SetVisibility(false);
 
-		//This section predicts what direction the shot will go roughly.
+		// This section predicts what direction the shot will go roughly. It's only activated when the player attempts to fire.
 	if (CurrentFireState == Charging)
 	{
 
+		// Determine what way to fire.
 		FVector offset;
 		if (isCameraLocked)
 			offset = GetActorLocation() - CameraLocationLock;
 		else
 			offset = GetActorLocation() - Camera->GetComponentLocation();
-
 		offset = offset.GetSafeNormal(1.0f) * UltraBall->GetMass() * CurrentCharge * 27.0f;
+
+		// Setup the predictor.
 		FPredictProjectilePathParams Predictor;
 		FPredictProjectilePathResult ProjectileResult;
 		ECollisionChannel CollisionChannel = ECC_Visibility;
 
+		// Setup the initial variables used by the predictor.
 		Predictor.StartLocation = GetActorLocation();
 		Predictor.LaunchVelocity = offset;
 		Predictor.bTraceComplex = true;
 		Predictor.ProjectileRadius = 30.0f;
 		Predictor.TraceChannel = CollisionChannel;
-
 		TArray<AActor*> ActorsToIgnore;
 		ActorsToIgnore.Add(this);
-
 		Predictor.ActorsToIgnore = ActorsToIgnore;
 		Predictor.SimFrequency = 12.0f;
 		Predictor.MaxSimTime = 2.0f;
 
-		// Project the Path
+		// Project the Path.
 		UGameplayStatics::PredictProjectilePath(GetWorld(), Predictor, ProjectileResult);
 
-		// Get the Location Data
+		// Get the Location Data.
 		TArray<FPredictProjectilePathPointData> Locations;
 		Locations = ProjectileResult.PathData;
 		
-		// Update Each Predictor Ring
+		// Update Each Predictor Ring according to the location data.
 		for (int i = 0; i < PredictorArray.Num(); i++)
 			SetRing(PredictorArray[i], Locations[1 + (i * 2)].Location);
 	}
 
-	// Change to a Sphere Mesh Colider if UltraBall is moving fast and a Dodecahedron Mesh Colider if it's moving slow.
+	// Change to a Sphere Mesh Colider if UltraBall is moving too fast and a Dodecahedron Mesh Colider if it's moving too slow.
 	MeshChangeTick(DeltaTime);
 
-	// Update the Dynamic Material and Lights
+	// Update the Dynamic Material and Lights.
 	MaterialTick(DeltaTime);
 
 }
@@ -181,7 +187,7 @@ void ABall::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
-	// Start Charge Up and End Charge Up for firing.
+	// Setup all bindings used for controlling UltraBall.
 	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &ABall::Fire);
 	PlayerInputComponent->BindAction("Fire", IE_Released, this, &ABall::EndFire);
 	PlayerInputComponent->BindAction("CancelFire", IE_Pressed, this, &ABall::CancelFire);
@@ -197,7 +203,10 @@ void ABall::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 void ABall::setCurrentCharge(float CurrentCharge)
 {
+	// Set the current charge to be applied to UltraBall.
 	this->CurrentCharge = CurrentCharge;
+
+	// Update the Dynamic Material and the internal light.
 	float ReddishGlow = (1.0f / MaxChargePossibleAtFullChargeUp) * CurrentCharge;
 	UltraBall->SetScalarParameterValueOnMaterials("Power", ReddishGlow);
 	Pointlight->SetIntensity(ReddishGlow * 9000.0f);
@@ -205,19 +214,21 @@ void ABall::setCurrentCharge(float CurrentCharge)
 
 void ABall::ZoomIn()
 {
+	// Zoom the Camera in.
 	CurrentZoomAmount -= (CurrentZoomAmount / (100.0f - ZoomInSpeed));
 	UpdateComponents();
 }
 
 void ABall::ZoomOut()
 {
+	// Zoom the Camera out.
 	CurrentZoomAmount += (CurrentZoomAmount / (100.0f - ZoomInSpeed));
 	UpdateComponents();
 }
 
 void ABall::Fire()
 {
-	// Start Charging UltraBall if UltraBall isn't moving.
+	// If UltraBall has stopped moving, then allow the charging of UltraBall.
 	if (UltraBall->GetPhysicsLinearVelocity().Size() <= 5.0f && UltraBall->GetPhysicsAngularVelocity().Size() <= 5.0f)
 	{
 		StartCharging();
@@ -225,6 +236,8 @@ void ABall::Fire()
 	}
 	else
 	{
+		// If UltraBall is still moving, then set "hasAttemptedShotWhileMoving" to true. This will draw a "X" to the screen until the timer has expired
+		// to inform the player that they attempted an illegal move.
 		hasAttemptedShotWhileMoving = true;
 		FTimerHandle AttemptedShotTimer;
 		GetWorldTimerManager().SetTimer(AttemptedShotTimer, this, &ABall::hasAttemptedShotWhileMovingTimerExpired, 1.0f);
@@ -233,18 +246,19 @@ void ABall::Fire()
 
 void ABall::EndFire()
 {
-	// Cancel Charging UltraBall if UltraBall is current Charging.
 	if (CurrentFireState == Charging)
 	{
 		// Charge back to an Idle Charge State.
 		CurrentFireState = Idle;
 
-		// Load the Simple Mesh if the speed is high enough to stop UltraBall from flying off randomly. Also set the timer for allowing a swap back to the complex mesh to at least 1 second.
+		// Load the Simple Mesh or the Complex mesh depending on the Charge going to be applied.
+		// If the Charge is low use the Complex mesh otherwise use the Simple mesh.
 		if (CurrentCharge > 0.1f)
 			UltraBall->SetStaticMesh(SimpleAsset);
 		else
 			UltraBall->SetStaticMesh(ComplexAsset);
 
+		// Set a timer so a mesh change can't happen again too soon.
 		isMeshChangeAllowed = false;
 		FTimerHandle MeshChangeTimer;
 		GetWorldTimerManager().SetTimer(MeshChangeTimer, this, &ABall::MeshChangeTimerExpired, 1.0f);
@@ -256,6 +270,7 @@ void ABall::EndFire()
 		else
 			LaunchDirection = UltraBall->GetComponentLocation() - Camera->GetComponentLocation();
 
+		// Apply the charge to UltraBall as a Impulse.
 		float ChargeAmount = CurrentCharge * MaxChargePossibleAtFullChargeUp;
 		LaunchDirection = LaunchDirection.GetSafeNormal(1.0f) * UltraBall->GetMass() * ChargeAmount * 1000.0f;
 		UltraBall->SetPhysicsLinearVelocity(FVector(0.0f, 0.0f, 0.0f));
@@ -271,21 +286,27 @@ void ABall::EndFire()
 
 void ABall::CancelFire()
 {
+	// Only proceed if the player is Charging UltraBall.
 	if (CurrentFireState == Charging)
 	{
+		// Cancel the Charging.
 		CurrentFireState = Idle;
+
+		// Call the Blueprint EndCharging Event.
 		EndCharging();
 	}
 }
 
 void ABall::LookUp(float value)
 {
+	// Restrict how far up and down the Camera can look to stop control reversing when flipping over the axis.
 	FRotator cameraRotation = SpringArm->GetComponentRotation();
 	if (cameraRotation.Pitch < -70)
 		cameraRotation.Pitch = -70.0f;
 	if (cameraRotation.Pitch > 36)
 		cameraRotation.Pitch = 36.0f;
 
+	// Apply the new Pitch.
 	cameraRotation.Pitch += value;
 	SpringArm->SetWorldRotation(cameraRotation);
 
@@ -293,6 +314,7 @@ void ABall::LookUp(float value)
 
 void ABall::LookLeft(float value)
 {
+	// Apply the new Yaw.
 	FRotator cameraRotation = SpringArm->GetComponentRotation();
 	cameraRotation.Yaw += value;
 	SpringArm->SetWorldRotation(cameraRotation);
@@ -300,6 +322,7 @@ void ABall::LookLeft(float value)
 
 void ABall::CameraLock()
 {
+	// Lock the current direcion for shooting based on the camera and allow free movement of the camera.
 	isCameraLocked = true;
 	CameraAngleLock = SpringArm->GetComponentRotation();
 	CameraLocationLock = Camera->GetComponentLocation();
@@ -307,17 +330,20 @@ void ABall::CameraLock()
 
 void ABall::CameraUnLock()
 {
+	// Return the camera back to the locked position.
 	isCameraLocked = false;
 	SpringArm->SetRelativeRotation(CameraAngleLock);
 }
 
 FString ABall::GetParString()
 {
+	// Return the current par as a string. This is used by the HUD Widget.
 	return FString::Printf(TEXT("par: %d/%d"), CurrentPar, MaxParAllowed);
 }
 
 FString ABall::GetFinishParString()
 {
+	// Return the current par as a string. This is used by the Level Finish Widget.
 	if (GetIfOutsidePar())
 	{
 		if (CurrentPar - MaxParAllowed == 1)
@@ -329,38 +355,28 @@ FString ABall::GetFinishParString()
 		return FString::Printf(TEXT("completed in %d out of %d shots"), CurrentPar, MaxParAllowed);
 }
 
-bool ABall::GetIfOutsidePar()
-{
-	return CurrentPar > MaxParAllowed;
-}
-
-float ABall::GetCharge()
-{
-	return CurrentCharge;
-}
-
-void ABall::Pause()
-{
-	isGamePaused = !isGamePaused;
-}
-
-void ABall::BumperHit()
-{
-	isMeshChangeAllowed = false;
-}
-
 void ABall::MeshChangeTimerExpired()
 {
+	// Allow mesh changing.
 	isMeshChangeAllowed = true;
 }
 
 void ABall::hasAttemptedShotWhileMovingTimerExpired()
 {
+	// Stop showing the "X" after the player attempted an illegal shot.
 	hasAttemptedShotWhileMoving = false;
+}
+
+void ABall::BumperHit()
+{
+	isMeshChangeAllowed = false;
+	FTimerHandle MeshChangeTimer;
+	GetWorldTimerManager().SetTimer(MeshChangeTimer, this, &ABall::MeshChangeTimerExpired, 1.0f);
 }
 
 void ABall::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
+	// This section attempts to play a sound if UltraBall colides with the ground.
 	if (Sound != nullptr && !Sound->IsPlaying())
 	{
 		if (GetVelocity().Size() > 50.0f)
@@ -380,6 +396,7 @@ void ABall::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveCo
 			GetWorld()->LineTraceSingleByChannel(Result, StartLocation, EndLocation, CollisionChannel, CollisionParameters, FCollisionResponseParams::DefaultResponseParam);
 			if (Result.GetActor() != NULL)
 			{
+				// Play the bounce sound.
 				Sound->Play(0.0f);
 				Sound->SetVolumeMultiplier((0.5f / 50.0f) * GetVelocity().Size());
 			}
@@ -387,13 +404,9 @@ void ABall::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveCo
 	}
 }
 
-bool ABall::GetHasAttemptedShotWhileMoving()
-{
-	return hasAttemptedShotWhileMoving;
-}
-
 void ABall::UpdateComponents()
 {
+	// Updated the Spring Arms length to match the new Zoom settings.
 	if (CurrentZoomAmount < MinZoomInLength) { CurrentZoomAmount = MinZoomInLength; }
 	if (CurrentZoomAmount > MaxZoomOutLength) { CurrentZoomAmount = MaxZoomOutLength; }
 	SpringArm->TargetArmLength = CurrentZoomAmount;
@@ -418,6 +431,7 @@ void ABall::MaterialTick(float DeltaTime)
 
 void ABall::MeshChangeTick(float DeltaTime)
 {
+	// Determine which mesh to use based on the speed set by the designer.
 	if (isMeshChangeAllowed)
 	{
 		if (UltraBall->GetPhysicsLinearVelocity().Size() >= SpeedAtWhichMeshTransitionsBackToComplex)
@@ -428,25 +442,28 @@ void ABall::MeshChangeTick(float DeltaTime)
 		else
 		{
 			if (UltraBall->GetStaticMesh() != ComplexAsset)
-			{
 				SetMesh(ComplexAsset);
-			}
 		}
 	}
 }
 
 void ABall::SetMesh(UStaticMesh* MeshToUse)
 {
+	// Record the current physics.
 	FVector LinearVelocity = UltraBall->GetPhysicsLinearVelocity();
 	FVector AngularVelocity = UltraBall->GetPhysicsAngularVelocity();
 
+	// Change the mesh.
 	UltraBall->SetStaticMesh(MeshToUse);
+
+	// Apply the previous physics to the new mesh.
 	UltraBall->SetPhysicsLinearVelocity(LinearVelocity);
 	UltraBall->SetPhysicsAngularVelocity(AngularVelocity);
 }
 
 void ABall::SetupRing(UStaticMeshComponent *Mesh)
 {
+	// Configure the Predictor Ring.
 	ConstructorHelpers::FObjectFinder<UStaticMesh> Predictor(TEXT("StaticMesh'/Game/Models/M_aim_guide.M_aim_guide'"));
 	Mesh->SetStaticMesh(Predictor.Object);
 	Mesh->SetSimulatePhysics(false);
@@ -458,6 +475,7 @@ void ABall::SetupRing(UStaticMeshComponent *Mesh)
 
 void ABall::SetRing(UStaticMeshComponent *Mesh, FVector Location)
 {
+	// Set the Predictor Rings World Location.
 	Mesh->SetWorldLocation(Location);
 	Mesh->SetWorldRotation(SpringArm->GetComponentRotation());
 	Mesh->SetVisibility(true);
