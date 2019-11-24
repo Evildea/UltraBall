@@ -132,6 +132,10 @@ public:
 	UFUNCTION(BlueprintCallable)
 	FString GetFinishParString();
 
+	// Widget: Returns whether this is the last level.
+	UFUNCTION(BlueprintPure)
+	bool GetLastLevel() { return isLastLevel; }
+
 	// Widget: Return if the player is currently over/outside of par. This is used by the Level Finish Widget.
 	UFUNCTION(BlueprintPure)
 	bool GetIfOutsidePar() { return CurrentPar > MaxParAllowed; }
@@ -188,6 +192,10 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Designer")
 	int MaxParAllowed;
 
+	// Designer: Whether this is the last level.
+	UPROPERTY(EditAnywhere, Category = "Designer")
+	bool isLastLevel;
+
 private:
 
 	// This enumerator determines what state UltraBall is in.
@@ -223,5 +231,8 @@ private:
 
 	// Timer: Stop showing the "X" after the player attempted an illegal shot.
 	void hasAttemptedShotWhileMovingTimerExpired() { hasAttemptedShotWhileMoving = false; }
+
+	// Play a sound upon impact with the ground or a wall in front of UltraBall.
+	void PlaySoundOnImpact(FVector EndLocation);
 
 };
