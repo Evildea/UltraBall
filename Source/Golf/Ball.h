@@ -199,7 +199,7 @@ public:
 private:
 
 	// This enumerator determines what state UltraBall is in.
-	enum FireStates {Idle, Charging};
+	enum FireStates { Idle, Charging };
 	FireStates CurrentFireState;
 
 	// Various temporary variables used for controlling UltraBall.
@@ -210,6 +210,7 @@ private:
 	bool isCameraLocked;
 	bool isGamePaused;
 	bool hasAttemptedShotWhileMoving;
+	bool hasPlayedSoundOnTheGroundBefore;
 	FVector CameraLocationLock;
 	FRotator CameraAngleLock;
 	int CurrentPar;
@@ -227,12 +228,12 @@ private:
 	void SetRing(UStaticMeshComponent *Mesh, FVector Location);
 
 	// Timer: Allow Mesh changing again.
-	void MeshChangeTimerExpired() { isMeshChangeAllowed = true; }
+	FORCEINLINE void MeshChangeTimerExpired() { isMeshChangeAllowed = true; }
 
 	// Timer: Stop showing the "X" after the player attempted an illegal shot.
-	void hasAttemptedShotWhileMovingTimerExpired() { hasAttemptedShotWhileMoving = false; }
+	FORCEINLINE void hasAttemptedShotWhileMovingTimerExpired() { hasAttemptedShotWhileMoving = false; }
 
 	// Play a sound upon impact with the ground or a wall in front of UltraBall.
-	void PlaySoundOnImpact(FVector EndLocation);
+	void PlaySoundOnImpact(FVector EndLocation, bool isGroundLevel);
 
 };
