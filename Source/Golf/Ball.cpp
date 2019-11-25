@@ -157,7 +157,8 @@ void ABall::Tick(float DeltaTime)
 			offset = GetActorLocation() - CameraLocationLock;
 		else
 			offset = GetActorLocation() - Camera->GetComponentLocation();
-		offset = offset.GetSafeNormal(1.0f) * UltraBall->GetMass() * CurrentCharge * 35.0f;
+		float ChargeAmount = CurrentCharge * MaxChargePossibleAtFullChargeUp;
+		offset = offset.GetSafeNormal(1.0f) * UltraBall->GetMass() * ChargeAmount * 10.0f;
 
 		// Setup the predictor.
 		FPredictProjectilePathParams Predictor;
