@@ -123,6 +123,7 @@ void ABall::BeginPlay()
 	isGamePaused = false;
 	isMeshChangeAllowed = false;
 	hasAttemptedShotWhileMoving = false;
+	hasPlayedSoundOnTheGroundBefore = false;
 }
 
 // Called every frame
@@ -130,6 +131,18 @@ void ABall::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	// Check if UltraBall is in the Air or on the ground and reactivate the ability to play the bounce sound.
+	ECollisionChannel CollisionChannel = ECC_Visibility;
+	FCollisionQueryParams CollisionParameters;
+	FHitResult Result;
+	CollisionParameters.AddIgnoredActor(this);
+	FVector EndLocation = GetActorLocation();
+	EndLocation.Z -= 100.0f;
+
+	GetWorld()->LineTraceSingleByChannel(Result, GetActorLocation(), EndLocation, CollisionChannel, CollisionParameters, FCollisionResponseParams::DefaultResponseParam);
+	if (Result.GetActor() == NULL)
+		hasPlayedSoundOnTheGroundBefore = false;
+	
 	// Hide each Predictor Ring at the start of the tick.
 	for (int i = 0; i < PredictorArray.Num(); i++)
 		PredictorArray[i]->SetVisibility(false);
@@ -389,34 +402,34 @@ void ABall::BumperHit()
 void ABall::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
 	// This section attempts to play a sound if UltraBall colides with the ground.
-	if (Sound != nullptr && !Sound->IsPlaying())
+	if (Sound != nullptr)
 	{
 		if (GetVelocity().Size() > 50.0f)
 		{
 
 			FVector Location = GetActorLocation();
 			Location.Z -= 100.0f;
-			PlaySoundOnImpact(Location);
+			PlaySoundOnImpact(Location, true);
 
 			Location = GetActorLocation();
 			Location.Z += 100.0f;
-			PlaySoundOnImpact(Location);
+			PlaySoundOnImpact(Location, false);
 
 			Location = GetActorLocation();
-			Location.X += 100.0f;
-			PlaySoundOnImpact(Location);
+			Location.X += 150.0f;
+			PlaySoundOnImpact(Location, false);
 
 			Location = GetActorLocation();
-			Location.X -= 100.0f;
-			PlaySoundOnImpact(Location);
+			Location.X -= 150.0f;
+			PlaySoundOnImpact(Location, false);
 
 			Location = GetActorLocation();
-			Location.Y += 100.0f;
-			PlaySoundOnImpact(Location);
+			Location.Y += 150.0f;
+			PlaySoundOnImpact(Location, false);
 
 			Location = GetActorLocation();
-			Location.Y -= 100.0f;
-			PlaySoundOnImpact(Location);
+			Location.Y -= 150.0f;
+			PlaySoundOnImpact(Location, false);
 
 		}
 	}
@@ -464,7 +477,7 @@ void ABall::SetRing(UStaticMeshComponent *Mesh, FVector Location)
 	Mesh->SetVisibility(true);
 }
 
-void ABall::PlaySoundOnImpact(FVector EndLocation)
+void ABall::PlaySoundOnImpact(FVector EndLocation, bool isGroundLevel)
 {
 	// Initialise Paramaters for a Ray Trace.
 	FVector StartLocation = GetActorLocation();
@@ -474,13 +487,27 @@ void ABall::PlaySoundOnImpact(FVector EndLocation)
 	CollisionParameters.AddIgnoredActor(this);
 
 	// Setup Parameters for the Ray Trace below object.
-	EndLocation.Z -= 100;
 	GetWorld()->LineTraceSingleByChannel(Result, StartLocation, EndLocation, CollisionChannel, CollisionParameters, FCollisionResponseParams::DefaultResponseParam);
-	if (Result.GetActor() != NULL)
+	if (isGroundLevel)
 	{
-		// Play the bounce sound.
-		Sound->Play(0.0f);
-		Sound->SetVolumeMultiplier((0.5f / 50.0f) * GetVelocity().Size());
+		if (Result.GetActor() != NULL && !hasPlayedSoundOnTheGroundBefore)
+		{
+			// Play the bounce sound.
+			Sound->Play();
+			Sound->SetVolumeMultiplier(0.001f * GetVelocity().Size());
+			hasPlayedSoundOnTheGroundBefore = true;
+		}
 	}
+	else
+	{
+		if (Result.GetActor() != NULL)
+		{
+			// Play the bounce sound.
+			Sound->Play();
+			Sound->SetVolumeMultiplier(0.001f * GetVelocity().Size());
+			hasPlayedSoundOnTheGroundBefore = true;
+		}
+	}
+
 }
 
