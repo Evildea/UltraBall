@@ -487,7 +487,7 @@ void ABall::PlaySoundOnImpact(FVector EndLocation, bool isGroundLevel)
 	FHitResult Result;
 	CollisionParameters.AddIgnoredActor(this);
 
-	// Setup Parameters for the Ray Trace below object.
+	// Setup Parameters for the Ray Trace.
 	GetWorld()->LineTraceSingleByChannel(Result, StartLocation, EndLocation, CollisionChannel, CollisionParameters, FCollisionResponseParams::DefaultResponseParam);
 	if (isGroundLevel)
 	{
