@@ -76,17 +76,13 @@ public:
 	UPROPERTY()
 	TArray<UStaticMeshComponent*> PredictorArray;
 
-	// Return the Current Pause Status.
-	UFUNCTION(BlueprintPure)
-	bool getGamePauseState() { return isGamePaused; }
-
-	// Set the Current Pause Status.
-	UFUNCTION(BlueprintCallable)
-	void setGamePauseState(bool isPaused) { isGamePaused = isPaused; }
-
 	// Set the Current Charge.
 	UFUNCTION(BlueprintCallable)
 	void setCurrentCharge(float CurrentCharge);
+
+	// Set the Current Blackening.
+	UFUNCTION(BlueprintCallable)
+	void setCurrentBlackening(float CurrentBlackening);
 
 	// Player Controller Function: Zoom In.
 	UFUNCTION()
@@ -124,32 +120,31 @@ public:
 	UFUNCTION()
 	void CameraUnLock();
 
-	// Widget: Return the current par as a string. This is used by the HUD Widget.
+	// Widget: Return the current par and Max Par. This is used by the HUD Widget.
 	UFUNCTION(BlueprintPure)
-	FString GetParString();
+	int GetCurrentPar() { return CurrentPar; }
 
-	// Widget: Return the current par as a string. This is used by the Level Finish Widget.
-	UFUNCTION(BlueprintCallable)
-	FString GetFinishParString();
+	UFUNCTION(BlueprintPure)
+	int GetMaxPar() { return MaxParAllowed; }
 
 	// Widget: Returns whether this is the last level.
 	UFUNCTION(BlueprintPure)
 	bool GetLastLevel() { return isLastLevel; }
 
-	// Widget: Return if the player is currently over/outside of par. This is used by the Level Finish Widget.
+	// Returns Whether the Player has run out of shots.
 	UFUNCTION(BlueprintPure)
-	bool GetIfOutsidePar() { return CurrentPar > MaxParAllowed; }
+	bool GetIfOutOfShots() { return isFailLevelAllowed ? CurrentPar >= MaxParAllowed : false; }
+
+	// Widget: Decrement the Par by one.
+	UFUNCTION(BlueprintCallable)
+	void DecrementFromPar(int Amount) { CurrentPar -= Amount; }
 
 	// Widget: Return the current Charge. This is used by Blueprints.
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintPure)
 	float GetCharge() { return CurrentCharge; }
 
-	// Widget: Pause or Unpause the game.
-	UFUNCTION()
-	void Pause() { isGamePaused = !isGamePaused; }
-
 	// Widget: Return if the player attempted an illegal shot. This is used by the HUD Widget.
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintPure)
 	bool GetHasAttemptedShotWhileMoving() { return hasAttemptedShotWhileMoving; }
 
 	// Called when UltraBall hits the Bumper.
@@ -167,6 +162,14 @@ public:
 	// Called by Blueprints when Charging has ended.
 	UFUNCTION(BlueprintImplementableEvent)
 	void EndCharging();
+
+	// Called by Blueprints when Blackening has started. 
+	UFUNCTION(BlueprintImplementableEvent)
+	void StartBlackening();
+
+	// Called by Blueprints when Blackening has ended.
+	UFUNCTION(BlueprintImplementableEvent)
+	void EndBlackening();
 
 	// Designer: Maximum Zoom Out Length of the Camera.
 	UPROPERTY(EditAnywhere, Category = "Designer", meta = (ClampMin = "100.0", ClampMax = "10000.0", UIMin = "100.0", UIMax = "10000.0"))
@@ -196,23 +199,38 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Designer")
 	bool isLastLevel;
 
+	UFUNCTION(BlueprintCallable)
+	void ZoneEnter(int ZoneType, FVector CenterOfGravity, FVector LaunchDirection, float LaunchPower);
+
 private:
 
 	// This enumerator determines what state UltraBall is in.
 	enum FireStates { Idle, Charging };
+	enum ChargeStates { HaveCharges, HaveNoCharges };
+	enum LocationStates { OnTheGround, InTheAir };
+	enum ZoneStates { InGravityZone, InLaunchZone, InNoZone };
+
 	FireStates CurrentFireState;
+	ChargeStates CurrentChargeState;
+	LocationStates CurrentLocationState;
+	ZoneStates CurrentZoneState;
 
 	// Various temporary variables used for controlling UltraBall.
 	float CurrentZoomAmount;
 	float CurrentCharge;
 	float CameraZoomAmountLock;
+	float LaunchPower;
+	float BlackeningAmount;
 	bool isMeshChangeAllowed;
 	bool isCameraLocked;
-	bool isGamePaused;
 	bool hasAttemptedShotWhileMoving;
 	bool hasPlayedSoundOnTheGroundBefore;
+	bool isFailLevelAllowed;
 	FVector CameraLocationLock;
 	FRotator CameraAngleLock;
+	FVector CenterOfGravity;
+	FVector LaunchDirection;
+
 	int CurrentPar;
 
 	// Forces the components such as the arrow and spring arm to update.
@@ -229,6 +247,9 @@ private:
 
 	// Timer: Allow Mesh changing again.
 	FORCEINLINE void MeshChangeTimerExpired() { isMeshChangeAllowed = true; }
+
+	// Timer: Allow level failing again.
+	FORCEINLINE void FailLevelTimerExpired() { isFailLevelAllowed = true; }
 
 	// Timer: Stop showing the "X" after the player attempted an illegal shot.
 	FORCEINLINE void hasAttemptedShotWhileMovingTimerExpired() { hasAttemptedShotWhileMoving = false; }

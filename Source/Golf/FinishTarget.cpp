@@ -44,6 +44,8 @@ AFinishTarget::AFinishTarget()
 		UltraBallInner->SetMaterial(0, Material.Object);
 	}
 
+	NextLevel = FName("None");
+
 }
 
 // Called when the game starts or when spawned

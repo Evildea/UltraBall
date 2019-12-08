@@ -40,7 +40,7 @@ ABall::ABall()
 	RootComponent = UltraBall;
 
 	// Apply the Dynamic Material to UltraBall.
-	ConstructorHelpers::FObjectFinder<UMaterialInstance> Material(TEXT("MaterialInstanceConstant'/Game/Materials/UltraBall_MI.UltraBall_MI'"));
+	ConstructorHelpers::FObjectFinder<UMaterialInstance> Material(TEXT("MaterialInstanceConstant'/Game/Textures/MaterialInstance/UltraBall_MI.UltraBall_MI'"));
 	if (Material.Succeeded())
 		UltraBall->SetMaterial(0, Material.Object);
 
@@ -115,15 +115,19 @@ void ABall::BeginPlay()
 
 	// Setup default values.
 	CurrentFireState = Idle;
+	CurrentZoneState = InNoZone;
+	CurrentLocationState = OnTheGround;
+	CurrentChargeState = HaveCharges;
 	CurrentZoomAmount = 0.0f;
 	CurrentPar = 0;
 	CurrentCharge = 0.0f;
 	isCameraLocked = false;
 	CameraZoomAmountLock = 0.0f;
-	isGamePaused = false;
 	isMeshChangeAllowed = false;
 	hasAttemptedShotWhileMoving = false;
 	hasPlayedSoundOnTheGroundBefore = false;
+	isFailLevelAllowed = true;
+	BlackeningAmount = 0.0f;
 }
 
 // Called every frame
@@ -131,7 +135,7 @@ void ABall::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	// Check if UltraBall is in the Air or on the ground and reactivate the ability to play the bounce sound.
+	// Check if UltraBall is in the Air or on the ground and reactivate the ability to play the bounce sound and reactivate charges.
 	ECollisionChannel CollisionChannel = ECC_Visibility;
 	FCollisionQueryParams CollisionParameters;
 	FHitResult Result;
@@ -142,6 +146,14 @@ void ABall::Tick(float DeltaTime)
 	GetWorld()->LineTraceSingleByChannel(Result, GetActorLocation(), EndLocation, CollisionChannel, CollisionParameters, FCollisionResponseParams::DefaultResponseParam);
 	if (Result.GetActor() == NULL)
 		hasPlayedSoundOnTheGroundBefore = false;
+	else
+	{
+		if (CurrentChargeState == HaveNoCharges)
+		{
+			CurrentChargeState = HaveCharges;
+			EndBlackening();
+		}
+	}
 	
 	// Hide each Predictor Ring at the start of the tick.
 	for (int i = 0; i < PredictorArray.Num(); i++)
@@ -217,6 +229,48 @@ void ABall::Tick(float DeltaTime)
 		if (transparency > 0.8f) { transparency = 1.0f; }
 		UltraBall->SetScalarParameterValueOnMaterials("Alpha", transparency);
 	}
+	UltraBall->SetScalarParameterValueOnMaterials("Blackening", BlackeningAmount);
+
+	// If in a Gravity Zone
+	if (CurrentZoneState == InGravityZone)
+	{
+		// Move the UltraBall Towards the Center of Gravity
+		FVector Offset = CenterOfGravity - GetActorLocation();
+		FVector DistanceToCenter = CenterOfGravity - GetActorLocation();
+
+		if (DistanceToCenter.Size() < 10.0)
+		{
+			UltraBall->SetAllPhysicsLinearVelocity(FVector(0.0f), false);
+			SetActorLocation(CenterOfGravity);
+		}
+		else
+		{
+			Offset = Offset.GetSafeNormal(1.0) * 800;
+			UltraBall->SetAllPhysicsLinearVelocity(Offset, false);
+		}
+	}
+
+	// If in a Launcher Zone
+	if (CurrentZoneState == InLaunchZone)
+	{
+		// Move the UltraBall Towards the Center of Gravity
+		FVector Offset = CenterOfGravity - GetActorLocation();
+		FVector DistanceToCenter = CenterOfGravity - GetActorLocation();
+
+		if (DistanceToCenter.Size() < 10.0)
+		{
+			SetActorLocation(CenterOfGravity);
+			CurrentZoneState = InNoZone;
+			UltraBall->SetEnableGravity(true);
+			UltraBall->SetPhysicsLinearVelocity(FVector(0.0f, 0.0f, 0.0f));
+			UltraBall->AddImpulse(LaunchDirection * LaunchPower);
+		}
+		else
+		{
+			Offset = Offset.GetSafeNormal(1.0) * 800;
+			UltraBall->SetAllPhysicsLinearVelocity(Offset, false);
+		}
+	}
 
 }
 
@@ -235,7 +289,6 @@ void ABall::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	PlayerInputComponent->BindAction("ZoomOut", IE_Pressed, this, &ABall::ZoomOut);
 	PlayerInputComponent->BindAction("CameraLock", IE_Pressed, this, &ABall::CameraLock);
 	PlayerInputComponent->BindAction("CameraLock", IE_Released, this, &ABall::CameraUnLock);
-	PlayerInputComponent->BindAction("Pause", IE_Pressed, this, &ABall::Pause);
 
 }
 
@@ -248,6 +301,11 @@ void ABall::setCurrentCharge(float CurrentCharge)
 	float ReddishGlow = (1.0f / MaxChargePossibleAtFullChargeUp) * CurrentCharge;
 	UltraBall->SetScalarParameterValueOnMaterials("Power", ReddishGlow);
 	Pointlight->SetIntensity(ReddishGlow * 9000.0f);
+}
+
+void ABall::setCurrentBlackening(float CurrentBlackening)
+{
+	BlackeningAmount = CurrentBlackening;
 }
 
 void ABall::ZoomIn()
@@ -266,15 +324,15 @@ void ABall::ZoomOut()
 
 void ABall::Fire()
 {
-	// If UltraBall has stopped moving, then allow the charging of UltraBall.
-	if (UltraBall->GetPhysicsLinearVelocity().Size() <= 5.0f && UltraBall->GetPhysicsAngularVelocity().Size() <= 5.0f)
+	// If UltraBall still has charges then allow the charging of UltraBall.
+	if (CurrentChargeState == HaveCharges && CurrentPar != MaxParAllowed)
 	{
 		StartCharging();
 		CurrentFireState = Charging;
 	}
 	else
 	{
-		// If UltraBall is still moving, then set "hasAttemptedShotWhileMoving" to true. This will draw a "X" to the screen until the timer has expired
+		// If UltraBall doesn't have chrges, then set "hasAttemptedShotWhileMoving" to true. This will draw a "X" to the screen until the timer has expired
 		// to inform the player that they attempted an illegal move.
 		hasAttemptedShotWhileMoving = true;
 		FTimerHandle AttemptedShotTimer;
@@ -286,8 +344,17 @@ void ABall::EndFire()
 {
 	if (CurrentFireState == Charging)
 	{
+		// Start Blackening Process.
+		if (CurrentZoneState == InNoZone)
+		{
+			CurrentChargeState = HaveNoCharges;
+			StartBlackening();
+		}
+
 		// Charge back to an Idle Charge State.
 		CurrentFireState = Idle;
+		CurrentZoneState = InNoZone;
+		UltraBall->SetEnableGravity(true);
 
 		// Load the Simple Mesh or the Complex mesh depending on the Charge going to be applied.
 		// If the Charge is low use the Complex mesh otherwise use the Simple mesh.
@@ -373,31 +440,15 @@ void ABall::CameraUnLock()
 	SpringArm->SetRelativeRotation(CameraAngleLock);
 }
 
-FString ABall::GetParString()
-{
-	// Return the current par as a string. This is used by the HUD Widget.
-	return FString::Printf(TEXT("par: %d/%d"), CurrentPar, MaxParAllowed);
-}
-
-FString ABall::GetFinishParString()
-{
-	// Return the current par as a string. This is used by the Level Finish Widget.
-	if (GetIfOutsidePar())
-	{
-		if (CurrentPar - MaxParAllowed == 1)
-			return FString::Printf(TEXT("the maximum par allowed is %d. you are %d shot over par."), MaxParAllowed, CurrentPar - MaxParAllowed);
-		else
-			return FString::Printf(TEXT("the maximum par allowed is %d. you are %d shots over par."), MaxParAllowed, CurrentPar - MaxParAllowed);
-	}
-	else
-		return FString::Printf(TEXT("completed in %d out of %d shots"), CurrentPar, MaxParAllowed);
-}
-
 void ABall::BumperHit()
 {
 	isMeshChangeAllowed = false;
 	FTimerHandle MeshChangeTimer;
 	GetWorldTimerManager().SetTimer(MeshChangeTimer, this, &ABall::MeshChangeTimerExpired, 1.0f);
+
+	isFailLevelAllowed = false;
+	FTimerHandle FailLevelTimer;
+	GetWorldTimerManager().SetTimer(FailLevelTimer, this, &ABall::FailLevelTimerExpired, 1.0f);
 }
 
 void ABall::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
@@ -434,6 +485,29 @@ void ABall::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveCo
 
 		}
 	}
+}
+
+void ABall::ZoneEnter(int ZoneType, FVector CenterOfGravity, FVector LaunchDirection, float LaunchPower)
+{
+
+	// Set Local Variables
+	this->CenterOfGravity = CenterOfGravity;
+	this->LaunchDirection = LaunchDirection;
+	this->LaunchPower = LaunchPower * UltraBall->GetMass() * 1000.0f;
+
+	// Gravity Zone Enter
+	if (ZoneType == 0)
+		CurrentZoneState = InGravityZone;
+
+	// Gravity Launcher Enter
+	if (ZoneType == 1)
+		CurrentZoneState = InLaunchZone;
+
+	// Disable All Gravity.
+	UltraBall->SetEnableGravity(false);
+	UltraBall->SetAllPhysicsLinearVelocity(FVector(0.0f), false);
+	// UltraBall->SetAllPhysicsAngularVelocity(FVector(0.0f), false);
+
 }
 
 void ABall::UpdateComponents()

@@ -32,7 +32,7 @@ ABumper::ABumper()
 	Sound->SetAutoActivate(false);
 	Sound->SetupAttachment(RootComponent);
 
-	Colider = CreateAbstractDefaultSubobject<UBoxComponent>("Colider");
+	Colider = CreateDefaultSubobject<UBoxComponent>("Colider");
 	Colider->SetWorldScale3D(FVector(4.1f, 0.7f, 1.1f));
 	Colider->SetRelativeLocation(FVector(65.5f, 1.0f, 0.0f));
 	Colider->SetWorldRotation(FRotator(0.0f, -90.000183f, 0.0f));
